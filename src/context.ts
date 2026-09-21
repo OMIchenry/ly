@@ -4,6 +4,8 @@ import type { MomentWeather } from './types';
 export interface CaptureContext {
   locationName: string | null;
   weather: MomentWeather | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 /** Map an Open-Meteo WMO weather code to a short human label. */
@@ -49,7 +51,12 @@ async function fetchWeather(
  * permission is denied, the device is offline, or anything else fails.
  */
 export async function captureContext(): Promise<CaptureContext> {
-  const empty: CaptureContext = { locationName: null, weather: null };
+  const empty: CaptureContext = {
+    locationName: null,
+    weather: null,
+    latitude: null,
+    longitude: null,
+  };
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return empty;
@@ -68,7 +75,7 @@ export async function captureContext(): Promise<CaptureContext> {
     const locationName =
       place?.city ?? place?.subregion ?? place?.region ?? null;
 
-    return { locationName, weather };
+    return { locationName, weather, latitude, longitude };
   } catch {
     return empty;
   }

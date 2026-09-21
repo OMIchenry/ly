@@ -15,7 +15,19 @@ import { loadMoments } from '../storage';
 import { useTheme } from '../theme';
 import { MomentCard } from '../components/MomentCard';
 import { Egg } from '../components/Egg';
-import { currentStreak, eggCaption, eggStage } from '../streak';
+import {
+  currentStreakDetailed,
+  eggCaption,
+  eggStage,
+  loadFreezeState,
+  saveFreezeState,
+  weekKey,
+} from '../streak';
+import {
+  onThisDayMoments,
+  refreshOnThisDayReminder,
+} from '../notifications';
+import { confirmDeleteMoment } from '../deleteMoment';
 import type { Theme } from '../theme';
 import type { Moment } from '../types';
 
@@ -72,8 +84,54 @@ const glyphStyles = StyleSheet.create({
   },
 });
 
-function StreakEgg({ moments, theme }: { moments: Moment[]; theme: Theme }) {
-  const streak = currentStreak(moments);
+// Minimal line-style map-pin glyph drawn with views (no icon font needed).
+function MapGlyph({ color }: { color: string }) {
+  return (
+    <View style={mapGlyphStyles.pin}>
+      <View style={[mapGlyphStyles.head, { borderColor: color }]}>
+        <View style={[mapGlyphStyles.headDot, { backgroundColor: color }]} />
+      </View>
+      <View style={[mapGlyphStyles.tail, { backgroundColor: color }]} />
+    </View>
+  );
+}
+
+const mapGlyphStyles = StyleSheet.create({
+  pin: {
+    alignItems: 'center',
+  },
+  head: {
+    width: 17,
+    height: 17,
+    borderRadius: 8.5,
+    borderWidth: 1.7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  tail: {
+    width: 1.7,
+    height: 7,
+    marginTop: -1,
+  },
+});
+
+function StreakEgg({
+  moments,
+  freezeAvailable,
+  freezeUsed,
+  theme,
+}: {
+  moments: Moment[];
+  freezeAvailable: boolean;
+  freezeUsed: boolean;
+  theme: Theme;
+}) {
+  const streak = currentStreakDetailed(moments, freezeAvailable).count;
   return (
     <View style={[styles.eggCard, { backgroundColor: theme.card }]}>
       <Egg stage={eggStage(streak)} color={theme.text} soft={theme.card} size={58} />
@@ -82,8 +140,15 @@ function StreakEgg({ moments, theme }: { moments: Moment[]; theme: Theme }) {
           {streak} {streak === 1 ? 'day' : 'days'}
         </Text>
         <Text style={[styles.eggCaption, { color: theme.secondaryText }]}>
-          {eggCaption(streak)}
+          {freezeUsed ? 'A freeze kept your streak alive' : eggCaption(streak)}
         </Text>
+        {freezeAvailable && !freezeUsed ? (
+          <View style={[styles.freezePill, { borderColor: theme.secondaryText }]}>
+            <Text style={[styles.freezeText, { color: theme.secondaryText }]}>
+              1 freeze ready
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -151,12 +216,36 @@ export default function HomeScreen() {
   const theme = useTheme();
   const [moments, setMoments] = useState<Moment[]>([]);
   const [query, setQuery] = useState('');
+  const [freezeAvailable, setFreezeAvailable] = useState(true);
+  const [freezeUsed, setFreezeUsed] = useState(false);
+
+  const reload = useCallback(async () => {
+    const loaded = await loadMoments();
+    setMoments(loaded);
+
+    // Streak freeze: one free pass per week, burned automatically.
+    const wk = weekKey();
+    const fs = await loadFreezeState();
+    const available = fs.week !== wk || !fs.used;
+    const result = currentStreakDetailed(loaded, available);
+    if (result.freezeUsed && available) {
+      await saveFreezeState({ week: wk, used: true });
+      setFreezeAvailable(false);
+      setFreezeUsed(true);
+    } else {
+      setFreezeAvailable(available);
+      setFreezeUsed(false);
+    }
+
+    // Keep tomorrow's 9am "On this day" reminder fresh.
+    refreshOnThisDayReminder(loaded);
+  }, []);
 
   // Reload every time the screen comes into focus (e.g. after saving).
   useFocusEffect(
     useCallback(() => {
-      loadMoments().then(setMoments);
-    }, []),
+      reload();
+    }, [reload]),
   );
 
   const searching = query.trim().length > 0;
@@ -172,19 +261,7 @@ export default function HomeScreen() {
   }, [moments, query, searching]);
 
   // Same month/day as today, from previous years — newest year first.
-  const onThisDay = useMemo(() => {
-    const now = new Date();
-    return moments
-      .filter((m) => {
-        const d = new Date(m.createdAt);
-        return (
-          d.getMonth() === now.getMonth() &&
-          d.getDate() === now.getDate() &&
-          d.getFullYear() < now.getFullYear()
-        );
-      })
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [moments]);
+  const onThisDay = useMemo(() => onThisDayMoments(moments), [moments]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -199,14 +276,24 @@ export default function HomeScreen() {
             </Text>
           ) : null}
         </View>
-        <Pressable
-          onPress={() => router.push('/calendar')}
-          hitSlop={12}
-          style={styles.calendarButton}
-          accessibilityLabel="Open calendar"
-        >
-          <CalendarGlyph color={theme.text} />
-        </Pressable>
+        <View style={styles.headerButtons}>
+          <Pressable
+            onPress={() => router.push('/map')}
+            hitSlop={12}
+            style={styles.headerButton}
+            accessibilityLabel="Open map"
+          >
+            <MapGlyph color={theme.text} />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/calendar')}
+            hitSlop={12}
+            style={styles.headerButton}
+            accessibilityLabel="Open calendar"
+          >
+            <CalendarGlyph color={theme.text} />
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.searchWrap, { backgroundColor: theme.well }]}>
@@ -225,7 +312,11 @@ export default function HomeScreen() {
         data={visibleMoments}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/moment/${item.id}`)}>
+          <Pressable
+            onPress={() => router.push(`/moment/${item.id}`)}
+            onLongPress={() => confirmDeleteMoment(item.id, reload)}
+            delayLongPress={350}
+          >
             <MomentCard moment={item} theme={theme} />
           </Pressable>
         )}
@@ -235,7 +326,12 @@ export default function HomeScreen() {
         ListHeaderComponent={
           searching ? null : (
             <>
-              <StreakEgg moments={moments} theme={theme} />
+              <StreakEgg
+                moments={moments}
+                freezeAvailable={freezeAvailable}
+                freezeUsed={freezeUsed}
+                theme={theme}
+              />
               <OnThisDay moments={onThisDay} theme={theme} />
               {moments.length > 0 ? (
                 <Text style={[styles.sectionKicker, { color: theme.secondaryText }]}>
@@ -293,6 +389,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   searchWrap: {
     marginHorizontal: 20,
     marginBottom: 8,
@@ -335,6 +441,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontSize: 13,
     letterSpacing: 0.5,
+  },
+  freezePill: {
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  freezeText: {
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   onThisDay: {
     marginBottom: 24,

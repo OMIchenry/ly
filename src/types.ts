@@ -20,6 +20,9 @@ export interface Moment {
   audioUri?: string | null;
   /** Frame shape for the photo. Older moments without this render as square. */
   photoShape?: PhotoShape | null;
+  /** Coordinates captured with the moment, for the map view. */
+  latitude?: number | null;
+  longitude?: number | null;
   /** Human-readable place name stamped at capture, e.g. "Scarborough". */
   locationName?: string | null;
   /** Weather stamped at capture. */

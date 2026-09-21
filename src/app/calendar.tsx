@@ -12,6 +12,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { loadMoments } from '../storage';
 import { useTheme } from '../theme';
 import { MomentCard } from '../components/MomentCard';
+import { confirmDeleteMoment } from '../deleteMoment';
 import {
   WEEKDAYS,
   addMonths,
@@ -40,10 +41,14 @@ export default function CalendarScreen() {
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selected, setSelected] = useState<Date>(now);
 
+  const reload = useCallback(() => {
+    loadMoments().then(setMoments);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      loadMoments().then(setMoments);
-    }, []),
+      reload();
+    }, [reload]),
   );
 
   // Days that have at least one moment, for the dots.
@@ -196,7 +201,12 @@ export default function CalendarScreen() {
         ) : (
           <View style={styles.momentList}>
             {selectedMoments.map((m) => (
-              <Pressable key={m.id} onPress={() => router.push(`/moment/${m.id}`)}>
+              <Pressable
+                key={m.id}
+                onPress={() => router.push(`/moment/${m.id}`)}
+                onLongPress={() => confirmDeleteMoment(m.id, reload)}
+                delayLongPress={350}
+              >
                 <MomentCard moment={m} theme={theme} />
               </Pressable>
             ))}

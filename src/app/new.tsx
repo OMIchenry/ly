@@ -50,6 +50,8 @@ export default function NewMomentScreen() {
         audioUri,
         locationName: ctx.locationName,
         weather: ctx.weather,
+        latitude: ctx.latitude,
+        longitude: ctx.longitude,
         createdAt: new Date().toISOString(),
       });
       router.back();

@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import '../notifications'; // Registers the notification handler once.
 
 export default function Layout() {
   return (
@@ -10,6 +11,7 @@ export default function Layout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="calendar" />
+      <Stack.Screen name="map" />
       <Stack.Screen name="moment/[id]" />
       <Stack.Screen
         name="new"

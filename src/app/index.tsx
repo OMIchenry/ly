@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   FlatList,
-  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -11,50 +10,64 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
 import { loadMoments } from '../storage';
-import { useTheme, type Theme } from '../theme';
+import { useTheme } from '../theme';
+import { MomentCard } from '../components/MomentCard';
 import type { Moment } from '../types';
 
-// Photos-style relative date: "Today", "Yesterday", otherwise "Sep 21, 2026".
-function formatDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
-  const days = Math.round(
-    (startOfToday.getTime() - startOfDate.getTime()) / 86_400_000,
-  );
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function MomentCard({ moment, theme }: { moment: Moment; theme: Theme }) {
+// Minimal line-style calendar glyph drawn with views (no icon font needed).
+function CalendarGlyph({ color }: { color: string }) {
   return (
-    <View style={[styles.card, { backgroundColor: theme.card }]}>
-      {moment.photoUri ? (
-        <Image source={{ uri: moment.photoUri }} style={styles.photo} />
-      ) : null}
-      <View style={styles.cardBody}>
-        <Text style={[styles.cardText, { color: theme.text }]}>
-          {moment.text}
-        </Text>
-        <Text style={[styles.cardDate, { color: theme.secondaryText }]}>
-          {formatDate(moment.createdAt)}
-        </Text>
+    <View style={[glyphStyles.box, { borderColor: color }]}>
+      <View style={[glyphStyles.binder, { backgroundColor: color }]} />
+      <View style={[glyphStyles.binder, glyphStyles.binderRight, { backgroundColor: color }]} />
+      <View style={[glyphStyles.rule, { backgroundColor: color }]} />
+      <View style={glyphStyles.dots}>
+        <View style={[glyphStyles.dot, { backgroundColor: color }]} />
+        <View style={[glyphStyles.dot, { backgroundColor: color }]} />
       </View>
     </View>
   );
 }
 
-function EmptyState({ theme }: { theme: Theme }) {
+const glyphStyles = StyleSheet.create({
+  box: {
+    width: 23,
+    height: 23,
+    borderRadius: 6,
+    borderWidth: 1.7,
+    alignItems: 'center',
+  },
+  binder: {
+    position: 'absolute',
+    top: -5,
+    left: 4,
+    width: 3,
+    height: 7,
+    borderRadius: 1.5,
+  },
+  binderRight: {
+    left: undefined,
+    right: 4,
+  },
+  rule: {
+    marginTop: 6,
+    width: '100%',
+    height: 1.7,
+    opacity: 0.85,
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4.5,
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+  },
+});
+
+function EmptyState({ theme }: { theme: ReturnType<typeof useTheme> }) {
   return (
     <View style={styles.empty}>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>
@@ -83,12 +96,22 @@ export default function HomeScreen() {
       <StatusBar style="auto" />
 
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>LY</Text>
-        {moments.length > 0 ? (
-          <Text style={[styles.count, { color: theme.secondaryText }]}>
-            {moments.length} {moments.length === 1 ? 'moment' : 'moments'}
-          </Text>
-        ) : null}
+        <View>
+          <Text style={[styles.title, { color: theme.text }]}>LY</Text>
+          {moments.length > 0 ? (
+            <Text style={[styles.count, { color: theme.secondaryText }]}>
+              {moments.length} {moments.length === 1 ? 'moment' : 'moments'}
+            </Text>
+          ) : null}
+        </View>
+        <Pressable
+          onPress={() => router.push('/calendar')}
+          hitSlop={12}
+          style={styles.calendarButton}
+          accessibilityLabel="Open calendar"
+        >
+          <CalendarGlyph color={theme.text} />
+        </Pressable>
       </View>
 
       <FlatList
@@ -121,6 +144,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: 12,
     paddingBottom: 12,
@@ -135,6 +161,12 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontSize: 15,
   },
+  calendarButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   list: {
     paddingHorizontal: 16,
     paddingBottom: 110,
@@ -143,32 +175,6 @@ const styles = StyleSheet.create({
   listEmpty: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  card: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  photo: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-  },
-  cardBody: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
-  },
-  cardText: {
-    fontSize: 17,
-    lineHeight: 24,
-  },
-  cardDate: {
-    marginTop: 8,
-    fontSize: 13,
   },
   empty: {
     flex: 1,

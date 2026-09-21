@@ -10,6 +10,7 @@ export default function Layout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="calendar" />
+      <Stack.Screen name="moment/[id]" />
       <Stack.Screen
         name="new"
         options={{

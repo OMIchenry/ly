@@ -24,6 +24,25 @@ export async function saveMoment(moment: Moment): Promise<Moment[]> {
   return updated;
 }
 
+/** Replace a moment by id with a patched copy. Returns the updated list. */
+export async function updateMoment(
+  id: string,
+  patch: Partial<Moment>,
+): Promise<Moment[]> {
+  const moments = await loadMoments();
+  const updated = moments.map((m) => (m.id === id ? { ...m, ...patch } : m));
+  await AsyncStorage.setItem(MOMENTS_KEY, JSON.stringify(updated));
+  return updated;
+}
+
+/** Remove a moment by id. Returns the updated list. */
+export async function deleteMoment(id: string): Promise<Moment[]> {
+  const moments = await loadMoments();
+  const updated = moments.filter((m) => m.id !== id);
+  await AsyncStorage.setItem(MOMENTS_KEY, JSON.stringify(updated));
+  return updated;
+}
+
 /** Simple unique id — good enough for local-only data. */
 export function newId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;

@@ -196,7 +196,9 @@ export default function CalendarScreen() {
         ) : (
           <View style={styles.momentList}>
             {selectedMoments.map((m) => (
-              <MomentCard key={m.id} moment={m} theme={theme} />
+              <Pressable key={m.id} onPress={() => router.push(`/moment/${m.id}`)}>
+                <MomentCard moment={m} theme={theme} />
+              </Pressable>
             ))}
           </View>
         )}

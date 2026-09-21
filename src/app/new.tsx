@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import {
-  ActionSheetIOS,
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -15,88 +13,39 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { newId, saveMoment } from '../storage';
 import { useTheme } from '../theme';
-
-async function pickFromLibrary(): Promise<string | null> {
-  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission needed', 'LY needs photo access to attach pictures.');
-    return null;
-  }
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images'],
-    allowsEditing: true,
-    aspect: [4, 3],
-    quality: 0.8,
-  });
-  if (result.canceled) return null;
-  return result.assets[0].uri;
-}
-
-async function takePhoto(): Promise<string | null> {
-  const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert('Permission needed', 'LY needs camera access to take pictures.');
-    return null;
-  }
-  const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ['images'],
-    allowsEditing: true,
-    aspect: [4, 3],
-    quality: 0.8,
-  });
-  if (result.canceled) return null;
-  return result.assets[0].uri;
-}
+import { choosePhoto } from '../photo';
+import { captureContext } from '../context';
+import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
 export default function NewMomentScreen() {
   const theme = useTheme();
   const [text, setText] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [audioUri, setAudioUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const canSave = text.trim().length > 0 && !saving;
 
-  function choosePhotoSource() {
-    const onTake = async () => {
-      const uri = await takePhoto();
-      if (uri) setPhotoUri(uri);
-    };
-    const onLibrary = async () => {
-      const uri = await pickFromLibrary();
-      if (uri) setPhotoUri(uri);
-    };
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Take Photo', 'Choose from Library'],
-          cancelButtonIndex: 0,
-        },
-        (index) => {
-          if (index === 1) void onTake();
-          else if (index === 2) void onLibrary();
-        },
-      );
-    } else {
-      Alert.alert('Add a photo', undefined, [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Take Photo', onPress: () => void onTake() },
-        { text: 'Choose from Library', onPress: () => void onLibrary() },
-      ]);
-    }
+  async function handleChoosePhoto() {
+    const uri = await choosePhoto();
+    if (uri) setPhotoUri(uri);
   }
 
   async function handleSave() {
     if (!canSave) return;
     setSaving(true);
     try {
+      // Quietly stamp location + weather — never blocks the save.
+      const ctx = await captureContext();
       await saveMoment({
         id: newId(),
         text: text.trim(),
         photoUri,
+        audioUri,
+        locationName: ctx.locationName,
+        weather: ctx.weather,
         createdAt: new Date().toISOString(),
       });
       router.back();
@@ -156,7 +105,7 @@ export default function NewMomentScreen() {
         >
           <Pressable
             style={[styles.archWell, { backgroundColor: theme.well }]}
-            onPress={choosePhotoSource}
+            onPress={handleChoosePhoto}
             accessibilityLabel="Add a photo"
           >
             {photoUri ? (
@@ -175,7 +124,7 @@ export default function NewMomentScreen() {
             )}
           </Pressable>
           {photoUri ? (
-            <Pressable onPress={choosePhotoSource} hitSlop={8}>
+            <Pressable onPress={handleChoosePhoto} hitSlop={8}>
               <Text style={[styles.changePhoto, { color: theme.secondaryText }]}>
                 Change photo
               </Text>
@@ -193,6 +142,27 @@ export default function NewMomentScreen() {
               autoFocus
             />
           </View>
+
+          <View style={styles.voiceBlock}>
+            {audioUri ? (
+              <View style={styles.audioRow}>
+                <View style={styles.audioRowGrow}>
+                  <VoicePlayer uri={audioUri} theme={theme} />
+                </View>
+                <Pressable onPress={() => setAudioUri(null)} hitSlop={10}>
+                  <Text style={[styles.removeAudio, { color: theme.secondaryText }]}>
+                    Remove
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <VoiceRecorder theme={theme} onDone={setAudioUri} />
+            )}
+          </View>
+
+          <Text style={[styles.contextHint, { color: theme.secondaryText }]}>
+            Location & weather are stamped automatically
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -290,5 +260,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     minHeight: 110,
     textAlignVertical: 'top',
+  },
+  voiceBlock: {
+    marginTop: 16,
+  },
+  audioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  audioRowGrow: {
+    flex: 1,
+  },
+  removeAudio: {
+    fontSize: 13,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  contextHint: {
+    marginTop: 20,
+    fontSize: 12,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    opacity: 0.7,
   },
 });

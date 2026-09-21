@@ -30,6 +30,18 @@
           "photosPermission": "LY needs access to your photos so you can attach them to moments.",
           "cameraPermission": "LY needs access to your camera so you can capture moments."
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "LY needs access to your microphone so you can record voice notes."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "LY uses your location to quietly stamp where each moment happened."
+        }
       ]
     ]
   }

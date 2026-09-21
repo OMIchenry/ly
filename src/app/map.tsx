@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
 import MapView, { Marker, type MapStyleElement, type Region } from 'react-native-maps';

@@ -1,6 +1,8 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { Theme } from '../theme';
 import type { Moment } from '../types';
+import { DEFAULT_PHOTO_SHAPE } from '../shapes';
+import { MomentPhoto } from './MomentPhoto';
 
 // Photos-style relative date: "Today", "Yesterday", otherwise "Sep 21, 2026".
 export function formatDate(iso: string): string {
@@ -34,9 +36,12 @@ export function MomentCard({
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
       {moment.photoUri ? (
-        <View style={styles.archWrap}>
-          <Image source={{ uri: moment.photoUri }} style={styles.photo} />
-        </View>
+        <MomentPhoto
+          uri={moment.photoUri}
+          shape={moment.photoShape ?? DEFAULT_PHOTO_SHAPE}
+          height={250}
+          style={styles.photoMargins}
+        />
       ) : null}
       <View style={styles.cardBody}>
         <Text style={[styles.cardText, { color: theme.text }]}>
@@ -55,21 +60,9 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     overflow: 'hidden',
   },
-  // Arch-shaped photo — the signature premium frame.
-  archWrap: {
+  photoMargins: {
     marginHorizontal: 14,
     marginTop: 14,
-    height: 250,
-    borderTopLeftRadius: 200,
-    borderTopRightRadius: 200,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(128, 128, 128, 0.12)',
-  },
-  photo: {
-    width: '100%',
-    height: '100%',
   },
   cardBody: {
     paddingHorizontal: 22,

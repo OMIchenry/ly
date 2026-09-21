@@ -15,6 +15,9 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { deleteMoment, loadMoments, updateMoment } from '../../storage';
 import { useTheme } from '../../theme';
 import { choosePhoto } from '../../photo';
+import { DEFAULT_PHOTO_SHAPE, photoFrameStyle, type PhotoShape } from '../../shapes';
+import { MomentPhoto } from '../../components/MomentPhoto';
+import { ShapePicker } from '../../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../../components/VoiceNote';
 import { formatDate } from '../../components/MomentCard';
 import type { Moment } from '../../types';
@@ -33,6 +36,7 @@ export default function MomentDetailScreen() {
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [draftPhoto, setDraftPhoto] = useState<string | null>(null);
+  const [draftShape, setDraftShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [draftAudio, setDraftAudio] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -50,6 +54,7 @@ export default function MomentDetailScreen() {
     if (!moment) return;
     setDraftText(moment.text);
     setDraftPhoto(moment.photoUri);
+    setDraftShape(moment.photoShape ?? DEFAULT_PHOTO_SHAPE);
     setDraftAudio(moment.audioUri ?? null);
     setEditing(true);
   }
@@ -61,6 +66,7 @@ export default function MomentDetailScreen() {
       const updated = await updateMoment(moment.id, {
         text: draftText.trim(),
         photoUri: draftPhoto,
+        photoShape: draftShape,
         audioUri: draftAudio,
       });
       const found = updated.find((m) => m.id === moment.id) ?? null;
@@ -154,8 +160,14 @@ export default function MomentDetailScreen() {
       >
         {editing ? (
           <>
+            <ShapePicker value={draftShape} onChange={setDraftShape} theme={theme} />
             <Pressable
-              style={[styles.archWell, { backgroundColor: theme.well }]}
+              style={[
+                styles.photoWell,
+                photoFrameStyle(draftShape),
+                draftShape === 'circle' ? styles.photoWellCircle : styles.photoWellTall,
+                { backgroundColor: theme.well },
+              ]}
               onPress={changePhoto}
             >
               {draftPhoto ? (
@@ -212,9 +224,12 @@ export default function MomentDetailScreen() {
         ) : (
           <>
             {moment.photoUri ? (
-              <View style={styles.archWrap}>
-                <Image source={{ uri: moment.photoUri }} style={styles.photo} />
-              </View>
+              <MomentPhoto
+                uri={moment.photoUri}
+                shape={moment.photoShape ?? DEFAULT_PHOTO_SHAPE}
+                height={320}
+                style={styles.photoView}
+              />
             ) : null}
             <Text style={[styles.text, { color: theme.text }]}>{moment.text}</Text>
             <Text style={[styles.meta, { color: theme.secondaryText }]}>
@@ -272,13 +287,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(128, 128, 128, 0.12)',
     marginBottom: 24,
   },
-  archWell: {
-    height: 280,
-    borderTopLeftRadius: 200,
-    borderTopRightRadius: 200,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+  photoWell: {
+    marginTop: 14,
     overflow: 'hidden',
+  },
+  photoWellTall: {
+    height: 280,
+  },
+  photoWellCircle: {
+    aspectRatio: 1,
+  },
+  photoView: {
+    marginBottom: 24,
   },
   photo: {
     width: '100%',

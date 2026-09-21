@@ -17,12 +17,15 @@ import { newId, saveMoment } from '../storage';
 import { useTheme } from '../theme';
 import { choosePhoto } from '../photo';
 import { captureContext } from '../context';
+import { DEFAULT_PHOTO_SHAPE, photoFrameStyle, type PhotoShape } from '../shapes';
+import { ShapePicker } from '../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
 export default function NewMomentScreen() {
   const theme = useTheme();
   const [text, setText] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [photoShape, setPhotoShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -43,6 +46,7 @@ export default function NewMomentScreen() {
         id: newId(),
         text: text.trim(),
         photoUri,
+        photoShape,
         audioUri,
         locationName: ctx.locationName,
         weather: ctx.weather,
@@ -103,8 +107,14 @@ export default function NewMomentScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          <ShapePicker value={photoShape} onChange={setPhotoShape} theme={theme} />
           <Pressable
-            style={[styles.archWell, { backgroundColor: theme.well }]}
+            style={[
+              styles.photoWell,
+              photoFrameStyle(photoShape),
+              photoShape === 'circle' ? styles.photoWellCircle : styles.photoWellTall,
+              { backgroundColor: theme.well },
+            ]}
             onPress={handleChoosePhoto}
             accessibilityLabel="Add a photo"
           >
@@ -205,13 +215,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   // Signature arch frame for the photo.
-  archWell: {
-    height: 320,
-    borderTopLeftRadius: 200,
-    borderTopRightRadius: 200,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+  photoWell: {
+    marginTop: 14,
     overflow: 'hidden',
+  },
+  photoWellTall: {
+    height: 320,
+  },
+  photoWellCircle: {
+    aspectRatio: 1,
   },
   photo: {
     width: '100%',

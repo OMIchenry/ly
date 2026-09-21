@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
-import { newId, saveMoment } from '../storage';
+import * as Haptics from 'expo-haptics';
+import { newId, saveMoment, updateMoment } from '../storage';
+import type { Moment } from '../types';
 import { useTheme } from '../theme';
 import { choosePhoto } from '../photo';
 import { captureContext } from '../context';
@@ -67,34 +69,54 @@ export default function NewMomentScreen() {
     if (!canSave) return;
     setSaving(true);
     try {
-      // Quietly stamp location + weather — never blocks the save.
-      const ctx = await captureContext();
       const createdAt = new Date().toISOString();
       const trimmed = text.trim();
-      // Untouched title field → generate from full context (now including
-      // location + weather). Cleared field → same. Custom text → keep it.
+      const id = newId();
+      // Untouched title field → generate from text. Cleared field → same.
+      // Custom text → keep it.
       const finalTitle =
         (titleTouched && title.trim()) ||
-        generateTitle({
-          text: trimmed,
-          createdAt,
-          locationName: ctx.locationName,
-          weather: ctx.weather,
-        });
+        generateTitle({ text: trimmed, createdAt });
       await saveMoment({
-        id: newId(),
+        id,
         title: finalTitle,
         text: trimmed,
         people: parsePeople(peopleInput),
         photoUri,
         photoShape,
         audioUri,
-        locationName: ctx.locationName,
-        weather: ctx.weather,
-        latitude: ctx.latitude,
-        longitude: ctx.longitude,
         createdAt,
       });
+      try {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      } catch {
+        // Haptics are garnish, never load-bearing.
+      }
+      // Location + weather attach quietly in the background — the save
+      // never waits for them. If they resolve, the auto-title upgrades too
+      // (unless the user wrote their own).
+      captureContext()
+        .then((ctx) => {
+          if (!ctx.locationName && !ctx.weather) return null;
+          const patch: Partial<Moment> = {
+            locationName: ctx.locationName,
+            weather: ctx.weather,
+            latitude: ctx.latitude,
+            longitude: ctx.longitude,
+          };
+          if (!titleTouched || !title.trim()) {
+            patch.title = generateTitle({
+              text: trimmed,
+              createdAt,
+              locationName: ctx.locationName,
+              weather: ctx.weather,
+            });
+          }
+          return updateMoment(id, patch);
+        })
+        .catch(() => {});
       router.back();
     } finally {
       setSaving(false);

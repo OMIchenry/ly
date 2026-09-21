@@ -52,7 +52,10 @@ export async function refreshOnThisDayReminder(
 
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    const otd = onThisDayMoments(moments);
+    // Match memories to the day the notification actually fires (tomorrow),
+    // not today — otherwise it arrives a day late with yesterday's memory.
+    const fireDate = nextNineAM();
+    const otd = onThisDayMoments(moments, fireDate);
     if (otd.length === 0) return;
 
     const currentYear = new Date().getFullYear();
@@ -77,7 +80,7 @@ export async function refreshOnThisDayReminder(
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: nextNineAM(),
+        date: fireDate,
       },
     });
   } catch {

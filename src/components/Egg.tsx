@@ -6,8 +6,8 @@ const EGG_PATH =
 
 /**
  * The streak egg, drawn in monochrome:
- * 0 = dotted outline (no egg yet), 1 = whole egg,
- * 2 = cracking egg, 3 = hatched chick in a broken shell.
+ * 0 = dotted outline (no egg yet), 1 = whole egg, 2 = cracking,
+ * 3 = hatching, 4 = chick in a broken shell, 5 = fledgling, 6 = soaring.
  */
 export function Egg({
   stage,
@@ -65,6 +65,42 @@ export function Egg({
 
       {stage === 3 ? (
         <>
+          {/* hatching: shell opening with light rays */}
+          <Path
+            d="M14,58 L26,70 L36,58 L48,72 L60,58 L70,70 L82,58 L86,62 C88,74 86,86 71,98 C62,104 38,104 29,98 C14,86 12,74 14,62 Z"
+            fill={soft}
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinejoin="round"
+          />
+          <Polyline
+            points="35,44 29,30"
+            fill="none"
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinecap="round"
+          />
+          <Polyline
+            points="50,40 50,24"
+            fill="none"
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinecap="round"
+          />
+          <Polyline
+            points="65,44 71,30"
+            fill="none"
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinecap="round"
+          />
+          {/* beak peeking out */}
+          <Path d="M44,56 L56,56 L50,64 Z" fill={color} />
+        </>
+      ) : null}
+
+      {stage === 4 ? (
+        <>
           {/* chick */}
           <Circle cx={50} cy={40} r={15} fill={soft} stroke={color} strokeWidth={3.5} />
           <Circle cx={44} cy={38} r={2.4} fill={color} />
@@ -78,6 +114,75 @@ export function Egg({
             stroke={color}
             strokeWidth={3.5}
             strokeLinejoin="round"
+          />
+        </>
+      ) : null}
+
+      {stage === 5 ? (
+        <>
+          {/* fledgling: bigger bird with a wing */}
+          <Ellipse
+            cx={31}
+            cy={62}
+            rx={9}
+            ry={15}
+            fill={soft}
+            stroke={color}
+            strokeWidth={3.5}
+            transform="rotate(-24 31 62)"
+          />
+          <Ellipse cx={52} cy={66} rx={23} ry={18} fill={soft} stroke={color} strokeWidth={3.5} />
+          <Circle cx={52} cy={36} r={17} fill={soft} stroke={color} strokeWidth={3.5} />
+          <Circle cx={46} cy={34} r={2.6} fill={color} />
+          <Circle cx={58} cy={34} r={2.6} fill={color} />
+          <Path d="M47,42 L57,42 L52,49 Z" fill={color} />
+          {/* tail feathers */}
+          <Polyline
+            points="72,72 84,66 82,78"
+            fill="none"
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </>
+      ) : null}
+
+      {stage === 6 ? (
+        <>
+          {/* soaring: spread wings + motion arcs */}
+          <Path
+            d="M50,58 C36,44 24,38 10,42 C22,48 30,54 38,62 Z"
+            fill={soft}
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinejoin="round"
+          />
+          <Path
+            d="M50,58 C64,44 76,38 90,42 C78,48 70,54 62,62 Z"
+            fill={soft}
+            stroke={color}
+            strokeWidth={3.5}
+            strokeLinejoin="round"
+          />
+          <Ellipse cx={50} cy={62} rx={10} ry={14} fill={soft} stroke={color} strokeWidth={3.5} />
+          <Circle cx={50} cy={46} r={8} fill={soft} stroke={color} strokeWidth={3} />
+          <Path d="M47,49 L53,49 L50,53 Z" fill={color} />
+          <Path
+            d="M28,88 C40,94 60,94 72,88"
+            fill="none"
+            stroke={color}
+            strokeWidth={3}
+            strokeLinecap="round"
+            opacity={0.5}
+          />
+          <Path
+            d="M36,98 C44,101 56,101 64,98"
+            fill="none"
+            stroke={color}
+            strokeWidth={3}
+            strokeLinecap="round"
+            opacity={0.3}
           />
         </>
       ) : null}

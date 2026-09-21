@@ -3,6 +3,7 @@ import {
   ActionSheetIOS,
   Alert,
   FlatList,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,17 +14,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { loadMoments } from '../storage';
 import { useTheme } from '../theme';
 import { MomentCard } from '../components/MomentCard';
 import { Egg } from '../components/Egg';
 import {
-  currentStreakDetailed,
   eggCaption,
   eggStage,
-  loadFreezeState,
-  saveFreezeState,
-  weekKey,
+  refreshEgg,
+  type EggResult,
 } from '../streak';
 import {
   onThisDayMoments,
@@ -150,35 +150,60 @@ const mapGlyphStyles = StyleSheet.create({
   },
 });
 
-function StreakEgg({
-  moments,
-  freezeAvailable,
-  freezeUsed,
-  theme,
-}: {
-  moments: Moment[];
-  freezeAvailable: boolean;
-  freezeUsed: boolean;
-  theme: Theme;
-}) {
-  const streak = currentStreakDetailed(moments, freezeAvailable).count;
+function EggCard({ egg, theme }: { egg: EggResult | null; theme: Theme }) {
+  if (!egg) return null;
+  const caption = egg.paused
+    ? 'Missed yesterday — save a moment today to repair it'
+    : egg.repaired
+      ? 'Streak repaired. Nice save.'
+      : egg.freezeBurned
+        ? 'A freeze kept your streak warm'
+        : egg.nextMilestone
+          ? `${eggCaption(egg.count)} · ${egg.nextMilestone - egg.count}d to ${egg.nextMilestone}`
+          : eggCaption(egg.count);
   return (
     <View style={[styles.eggCard, { backgroundColor: theme.card }]}>
-      <Egg stage={eggStage(streak)} color={theme.text} soft={theme.card} size={58} />
+      <View style={{ opacity: egg.paused ? 0.45 : 1 }}>
+        <Egg stage={egg.stage} color={theme.text} soft={theme.card} size={58} />
+      </View>
       <View style={styles.eggText}>
         <Text style={[styles.eggCount, { color: theme.text }]}>
-          {streak} {streak === 1 ? 'day' : 'days'}
+          {egg.count} {egg.count === 1 ? 'day' : 'days'}
+          {egg.paused ? ' · paused' : ''}
         </Text>
         <Text style={[styles.eggCaption, { color: theme.secondaryText }]}>
-          {freezeUsed ? 'A freeze kept your streak alive' : eggCaption(streak)}
+          {caption}
         </Text>
-        {freezeAvailable && !freezeUsed ? (
-          <View style={[styles.freezePill, { borderColor: theme.secondaryText }]}>
-            <Text style={[styles.freezeText, { color: theme.secondaryText }]}>
-              1 freeze ready
-            </Text>
-          </View>
-        ) : null}
+        <View style={styles.eggMetaRow}>
+          {egg.freezes > 0 ? (
+            <View style={[styles.freezePill, { borderColor: theme.secondaryText }]}>
+              <Text style={[styles.freezeText, { color: theme.secondaryText }]}>
+                {egg.freezes} {egg.freezes === 1 ? 'freeze' : 'freezes'}
+              </Text>
+            </View>
+          ) : null}
+          {egg.paused ? (
+            <View style={[styles.freezePill, { backgroundColor: theme.text }]}>
+              <Text style={[styles.freezeText, { color: theme.onText }]}>
+                Repair today
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.historyStrip}>
+          {egg.history.map((hit, i) => (
+            <View
+              key={i}
+              style={[
+                styles.historyDot,
+                {
+                  backgroundColor: hit ? theme.text : theme.separator,
+                  opacity: hit ? 1 : 0.5,
+                },
+              ]}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -246,8 +271,8 @@ export default function HomeScreen() {
   const theme = useTheme();
   const [moments, setMoments] = useState<Moment[]>([]);
   const [query, setQuery] = useState('');
-  const [freezeAvailable, setFreezeAvailable] = useState(true);
-  const [freezeUsed, setFreezeUsed] = useState(false);
+  const [egg, setEgg] = useState<EggResult | null>(null);
+  const [milestone, setMilestone] = useState<number | null>(null);
   const [trashCount, setTrashCount] = useState(0);
   const { lockEnabled, toggleLock } = useLock();
 
@@ -255,18 +280,17 @@ export default function HomeScreen() {
     const loaded = await loadMoments();
     setMoments(loaded);
 
-    // Streak freeze: one free pass per week, burned automatically.
-    const wk = weekKey();
-    const fs = await loadFreezeState();
-    const available = fs.week !== wk || !fs.used;
-    const result = currentStreakDetailed(loaded, available);
-    if (result.freezeUsed && available) {
-      await saveFreezeState({ week: wk, used: true });
-      setFreezeAvailable(false);
-      setFreezeUsed(true);
-    } else {
-      setFreezeAvailable(available);
-      setFreezeUsed(false);
+    // The egg system: streak, freezes, repairs, milestones — one refresh,
+    // one source of truth.
+    const er = await refreshEgg(loaded);
+    setEgg(er);
+    if (er.newMilestones.length > 0) {
+      setMilestone(er.newMilestones[0]);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        // Garnish, not load-bearing.
+      }
     }
 
     // Keep tomorrow's 9am "On this day" reminder fresh.
@@ -316,6 +340,11 @@ export default function HomeScreen() {
         if (index === 0) router.push('/photos');
         else if (index === 1) router.push('/trash');
         else if (index === 2) {
+          try {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          } catch {
+            // Garnish, not load-bearing.
+          }
           const result = await toggleLock();
           if (result === 'unavailable') {
             Alert.alert(
@@ -401,12 +430,7 @@ export default function HomeScreen() {
         ListHeaderComponent={
           searching ? null : (
             <>
-              <StreakEgg
-                moments={moments}
-                freezeAvailable={freezeAvailable}
-                freezeUsed={freezeUsed}
-                theme={theme}
-              />
+              <EggCard egg={egg} theme={theme} />
               <OnThisDay moments={onThisDay} theme={theme} />
               {moments.length > 0 ? (
                 <Text style={[styles.sectionKicker, { color: theme.secondaryText }]}>
@@ -431,6 +455,38 @@ export default function HomeScreen() {
       >
         <Text style={[styles.fabPlus, { color: theme.onText }]}>+</Text>
       </Pressable>
+
+      <Modal
+        visible={milestone !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMilestone(null)}
+      >
+        <View style={styles.milestoneBackdrop}>
+          <View style={[styles.milestoneCard, { backgroundColor: theme.card }]}>
+            <Egg
+              stage={eggStage(milestone ?? 0)}
+              color={theme.text}
+              soft={theme.card}
+              size={96}
+            />
+            <Text style={[styles.milestoneTitle, { color: theme.text }]}>
+              {milestone}-day streak!
+            </Text>
+            <Text style={[styles.milestoneSub, { color: theme.secondaryText }]}>
+              Your egg evolved — and you earned a freeze.
+            </Text>
+            <Pressable
+              onPress={() => setMilestone(null)}
+              style={[styles.milestoneButton, { backgroundColor: theme.text }]}
+            >
+              <Text style={[styles.milestoneButtonText, { color: theme.onText }]}>
+                Keep going
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -518,8 +574,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   freezePill: {
-    alignSelf: 'flex-start',
-    marginTop: 10,
     borderWidth: 1,
     borderRadius: 999,
     paddingHorizontal: 12,
@@ -529,6 +583,59 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
+  },
+  eggMetaRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  historyStrip: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 12,
+    flexWrap: 'wrap',
+  },
+  historyDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  milestoneBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+  },
+  milestoneCard: {
+    borderRadius: 28,
+    paddingVertical: 36,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    width: '100%',
+  },
+  milestoneTitle: {
+    marginTop: 18,
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  milestoneSub: {
+    marginTop: 8,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  milestoneButton: {
+    marginTop: 24,
+    borderRadius: 100,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+  },
+  milestoneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   onThisDay: {
     marginBottom: 24,

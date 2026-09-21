@@ -21,6 +21,8 @@ export interface Moment {
   /** Auto-generated title, editable by the user. Older moments without one
       get a generated fallback at render time via displayTitle(). */
   title?: string | null;
+  /** People tagged in the moment, e.g. ["Maya", "Jon"]. */
+  people?: string[];
   /** Frame shape for the photo. Older moments without this render as square. */
   photoShape?: PhotoShape | null;
   /** Coordinates captured with the moment, for the map view. */

@@ -19,6 +19,22 @@ import { choosePhoto } from '../photo';
 import { captureContext } from '../context';
 import { DEFAULT_PHOTO_SHAPE, photoFrameStyle, type PhotoShape } from '../shapes';
 import { generateTitle } from '../titles';
+
+/** "Maya, Jon" → ["Maya", "Jon"]. Dedupes (case-insensitive), drops empties,
+    preserves first-seen casing and order. */
+export function parsePeople(input: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const part of input.split(',')) {
+    const name = part.trim();
+    const key = name.toLowerCase();
+    if (name && !seen.has(key)) {
+      seen.add(key);
+      out.push(name);
+    }
+  }
+  return out;
+}
 import { ShapePicker } from '../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
@@ -27,6 +43,7 @@ export default function NewMomentScreen() {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const [titleTouched, setTitleTouched] = useState(false);
+  const [peopleInput, setPeopleInput] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoShape, setPhotoShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [audioUri, setAudioUri] = useState<string | null>(null);
@@ -68,6 +85,7 @@ export default function NewMomentScreen() {
         id: newId(),
         title: finalTitle,
         text: trimmed,
+        people: parsePeople(peopleInput),
         photoUri,
         photoShape,
         audioUri,
@@ -180,6 +198,21 @@ export default function NewMomentScreen() {
               placeholder="Title"
               placeholderTextColor={theme.secondaryText}
               accessibilityLabel="Moment title"
+            />
+          </View>
+
+          <View style={[styles.peopleCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.titleLabel, { color: theme.secondaryText }]}>
+              Who was here
+            </Text>
+            <TextInput
+              style={[styles.peopleInput, { color: theme.text }]}
+              value={peopleInput}
+              onChangeText={setPeopleInput}
+              placeholder="Maya, Jon"
+              placeholderTextColor={theme.secondaryText}
+              autoCapitalize="words"
+              accessibilityLabel="People in this moment"
             />
           </View>
 
@@ -327,6 +360,19 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     letterSpacing: 0.2,
     fontWeight: '600',
+  },
+  peopleCard: {
+    marginTop: 14,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 16,
+  },
+  peopleInput: {
+    marginTop: 6,
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: 0.2,
   },
   input: {
     fontSize: 17,

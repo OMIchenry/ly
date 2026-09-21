@@ -21,6 +21,7 @@ import { ShapePicker } from '../../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../../components/VoiceNote';
 import { formatDate } from '../../components/MomentCard';
 import { displayTitle, generateTitle } from '../../titles';
+import { parsePeople } from '../new';
 import type { Moment } from '../../types';
 
 function metaLine(moment: Moment): string {
@@ -38,6 +39,7 @@ export default function MomentDetailScreen() {
   const [draftText, setDraftText] = useState('');
   const [draftTitle, setDraftTitle] = useState('');
   const [draftTitleTouched, setDraftTitleTouched] = useState(false);
+  const [draftPeople, setDraftPeople] = useState('');
   const [draftPhoto, setDraftPhoto] = useState<string | null>(null);
   const [draftShape, setDraftShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [draftAudio, setDraftAudio] = useState<string | null>(null);
@@ -58,6 +60,7 @@ export default function MomentDetailScreen() {
     setDraftText(moment.text);
     setDraftTitle(moment.title ?? '');
     setDraftTitleTouched(!!(moment.title ?? '').trim());
+    setDraftPeople((moment.people ?? []).join(', '));
     setDraftPhoto(moment.photoUri);
     setDraftShape(moment.photoShape ?? DEFAULT_PHOTO_SHAPE);
     setDraftAudio(moment.audioUri ?? null);
@@ -80,6 +83,7 @@ export default function MomentDetailScreen() {
       const updated = await updateMoment(moment.id, {
         title: finalTitle,
         text: trimmedText,
+        people: parsePeople(draftPeople),
         photoUri: draftPhoto,
         photoShape: draftShape,
         audioUri: draftAudio,
@@ -229,6 +233,21 @@ export default function MomentDetailScreen() {
               />
             </View>
 
+            <View style={[styles.titleCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.titleLabel, { color: theme.secondaryText }]}>
+                Who was here
+              </Text>
+              <TextInput
+                style={[styles.peopleInput, { color: theme.text }]}
+                value={draftPeople}
+                onChangeText={setDraftPeople}
+                placeholder="Maya, Jon"
+                placeholderTextColor={theme.secondaryText}
+                autoCapitalize="words"
+                accessibilityLabel="People in this moment"
+              />
+            </View>
+
             <View style={[styles.textCard, { backgroundColor: theme.card }]}>
               <TextInput
                 style={[styles.input, { color: theme.text }]}
@@ -281,6 +300,20 @@ export default function MomentDetailScreen() {
             <Text style={[styles.meta, { color: theme.secondaryText }]}>
               {metaLine(moment)}
             </Text>
+            {(moment.people ?? []).length > 0 ? (
+              <View style={styles.chipRow}>
+                {(moment.people ?? []).map((name) => (
+                  <View
+                    key={name}
+                    style={[styles.chip, { backgroundColor: theme.well }]}
+                  >
+                    <Text style={[styles.chipText, { color: theme.text }]}>
+                      {name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
             {moment.audioUri ? (
               <View style={styles.voiceBlock}>
                 <VoicePlayer uri={moment.audioUri} theme={theme} />
@@ -393,6 +426,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     fontWeight: '600',
   },
+  peopleInput: {
+    marginTop: 6,
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: 0.2,
+  },
   detailTitle: {
     fontSize: 24,
     lineHeight: 32,
@@ -418,6 +457,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 100,
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
   voiceBlock: {
     marginTop: 22,

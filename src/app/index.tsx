@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ActionSheetIOS,
+  Alert,
   FlatList,
   Pressable,
   ScrollView,
@@ -29,6 +31,8 @@ import {
 } from '../notifications';
 import { confirmDeleteMoment } from '../deleteMoment';
 import { displayTitle } from '../titles';
+import { loadTrash } from '../storage';
+import { useLock } from '../components/LockGate';
 import type { Theme } from '../theme';
 import type { Moment } from '../types';
 
@@ -82,6 +86,31 @@ const glyphStyles = StyleSheet.create({
     width: 3,
     height: 3,
     borderRadius: 1.5,
+  },
+});
+
+// Horizontal ellipsis glyph for the "more" menu.
+function MoreGlyph({ color }: { color: string }) {
+  return (
+    <View style={moreGlyphStyles.row}>
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={[moreGlyphStyles.dot, { backgroundColor: color }]} />
+      ))}
+    </View>
+  );
+}
+
+const moreGlyphStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    height: 24,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
 });
 
@@ -219,6 +248,8 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('');
   const [freezeAvailable, setFreezeAvailable] = useState(true);
   const [freezeUsed, setFreezeUsed] = useState(false);
+  const [trashCount, setTrashCount] = useState(0);
+  const { lockEnabled, toggleLock } = useLock();
 
   const reload = useCallback(async () => {
     const loaded = await loadMoments();
@@ -240,6 +271,9 @@ export default function HomeScreen() {
 
     // Keep tomorrow's 9am "On this day" reminder fresh.
     refreshOnThisDayReminder(loaded);
+
+    // Badge the trash count in the ••• menu.
+    loadTrash().then((t) => setTrashCount(t.length));
   }, []);
 
   // Reload every time the screen comes into focus (e.g. after saving).
@@ -258,12 +292,43 @@ export default function HomeScreen() {
       (m) =>
         m.text.toLowerCase().includes(q) ||
         displayTitle(m).toLowerCase().includes(q) ||
-        (m.locationName ?? '').toLowerCase().includes(q),
+        (m.locationName ?? '').toLowerCase().includes(q) ||
+        (m.people ?? []).some((p) => p.toLowerCase().includes(q)),
     );
   }, [moments, query, searching]);
 
   // Same month/day as today, from previous years — newest year first.
   const onThisDay = useMemo(() => onThisDayMoments(moments), [moments]);
+
+  function openMoreMenu() {
+    const options = [
+      'Photos',
+      trashCount > 0 ? `Recently Deleted (${trashCount})` : 'Recently Deleted',
+      lockEnabled ? 'Face ID Lock: On' : 'Face ID Lock: Off',
+      'Cancel',
+    ];
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex: options.length - 1,
+      },
+      async (index) => {
+        if (index === 0) router.push('/photos');
+        else if (index === 1) router.push('/trash');
+        else if (index === 2) {
+          const result = await toggleLock();
+          if (result === 'unavailable') {
+            Alert.alert(
+              'Face ID not available',
+              'This device has no biometric or passcode authentication set up.',
+            );
+          } else if (result === 'denied') {
+            Alert.alert('Not enabled', 'Authentication was cancelled.');
+          }
+        }
+      },
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -294,6 +359,14 @@ export default function HomeScreen() {
             accessibilityLabel="Open calendar"
           >
             <CalendarGlyph color={theme.text} />
+          </Pressable>
+          <Pressable
+            onPress={openMoreMenu}
+            hitSlop={12}
+            style={styles.headerButton}
+            accessibilityLabel="More options"
+          >
+            <MoreGlyph color={theme.text} />
           </Pressable>
         </View>
       </View>

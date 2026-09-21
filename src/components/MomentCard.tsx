@@ -56,6 +56,11 @@ export function MomentCard({
             {moment.text}
           </Text>
         ) : null}
+        {(moment.people ?? []).length > 0 ? (
+          <Text style={[styles.cardPeople, { color: theme.secondaryText }]}>
+            with {(moment.people ?? []).join(', ')}
+          </Text>
+        ) : null}
         <Text style={[styles.cardDate, { color: theme.secondaryText }]}>
           {formatDate(moment.createdAt)}
         </Text>
@@ -89,6 +94,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     letterSpacing: 0.2,
+  },
+  cardPeople: {
+    marginTop: 8,
+    fontSize: 12,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    opacity: 0.8,
   },
   cardDate: {
     marginTop: 10,

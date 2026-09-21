@@ -34,7 +34,9 @@ export function MomentCard({
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
       {moment.photoUri ? (
-        <Image source={{ uri: moment.photoUri }} style={styles.photo} />
+        <View style={styles.archWrap}>
+          <Image source={{ uri: moment.photoUri }} style={styles.photo} />
+        </View>
       ) : null}
       <View style={styles.cardBody}>
         <Text style={[styles.cardText, { color: theme.text }]}>
@@ -50,29 +52,39 @@ export function MomentCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 28,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+  },
+  // Arch-shaped photo — the signature premium frame.
+  archWrap: {
+    marginHorizontal: 14,
+    marginTop: 14,
+    height: 250,
+    borderTopLeftRadius: 200,
+    borderTopRightRadius: 200,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(128, 128, 128, 0.12)',
   },
   photo: {
     width: '100%',
-    aspectRatio: 4 / 3,
+    height: '100%',
   },
   cardBody: {
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 22,
   },
   cardText: {
     fontSize: 17,
-    lineHeight: 24,
+    lineHeight: 26,
+    letterSpacing: 0.2,
   },
   cardDate: {
-    marginTop: 8,
-    fontSize: 13,
+    marginTop: 10,
+    fontSize: 12,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

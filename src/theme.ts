@@ -1,20 +1,20 @@
 import { useColorScheme } from 'react-native';
 
-// iOS system palette, adaptive to light / dark mode.
-// Follows Apple's Human Interface Guidelines values for system
-// backgrounds, labels, and the system blue accent.
+// Monochrome premium palette — no chromatic accent.
+// Light: paper white, soft gray cards, ink black text.
+// Dark: true black, charcoal cards, white text.
 export interface Theme {
   dark: boolean;
-  /** System grouped background (the canvas behind cards). */
+  /** Screen background. */
   background: string;
-  /** Card / secondary grouped background. */
+  /** Card background. */
   card: string;
-  /** Primary label color. */
+  /** Primary label color (also the accent — ink). */
   text: string;
+  /** Color that contrasts against `text` (for content on filled shapes). */
+  onText: string;
   /** Secondary label color. */
   secondaryText: string;
-  /** System blue accent. */
-  blue: string;
   /** Hairline separator color. */
   separator: string;
   /** Muted well color for empty photo / input areas. */
@@ -23,27 +23,27 @@ export interface Theme {
 
 const light: Theme = {
   dark: false,
-  background: '#F2F2F7',
-  card: '#FFFFFF',
-  text: '#000000',
-  secondaryText: 'rgba(60, 60, 67, 0.6)',
-  blue: '#007AFF',
-  separator: 'rgba(60, 60, 67, 0.12)',
-  well: 'rgba(120, 120, 128, 0.12)',
+  background: '#FFFFFF',
+  card: '#F4F4F5',
+  text: '#0A0A0A',
+  onText: '#FFFFFF',
+  secondaryText: 'rgba(10, 10, 10, 0.55)',
+  separator: 'rgba(10, 10, 10, 0.1)',
+  well: 'rgba(10, 10, 10, 0.05)',
 };
 
 const dark: Theme = {
   dark: true,
   background: '#000000',
-  card: '#1C1C1E',
-  text: '#FFFFFF',
-  secondaryText: 'rgba(235, 235, 245, 0.6)',
-  blue: '#0A84FF',
-  separator: 'rgba(84, 84, 88, 0.65)',
-  well: 'rgba(120, 120, 128, 0.24)',
+  card: '#171717',
+  text: '#FAFAFA',
+  onText: '#000000',
+  secondaryText: 'rgba(250, 250, 250, 0.55)',
+  separator: 'rgba(250, 250, 250, 0.14)',
+  well: 'rgba(250, 250, 250, 0.07)',
 };
 
-/** Returns the iOS system theme matching the device appearance. */
+/** Returns the monochrome theme matching the device appearance. */
 export function useTheme(): Theme {
   return useColorScheme() === 'dark' ? dark : light;
 }

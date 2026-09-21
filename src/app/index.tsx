@@ -70,11 +70,14 @@ const glyphStyles = StyleSheet.create({
 function EmptyState({ theme }: { theme: ReturnType<typeof useTheme> }) {
   return (
     <View style={styles.empty}>
+      <Text style={[styles.emptyKicker, { color: theme.secondaryText }]}>
+        Begin anywhere
+      </Text>
       <Text style={[styles.emptyTitle, { color: theme.text }]}>
-        No Moments Yet
+        No moments yet
       </Text>
       <Text style={[styles.emptySubtitle, { color: theme.secondaryText }]}>
-        Tap + to capture a small moment{'\n'}worth keeping.
+        Tap + to keep a small moment{'\n'}before it fades.
       </Text>
     </View>
   );
@@ -128,12 +131,12 @@ export default function HomeScreen() {
       <Pressable
         style={({ pressed }) => [
           styles.fab,
-          { backgroundColor: theme.blue, opacity: pressed ? 0.85 : 1 },
+          { backgroundColor: theme.text, opacity: pressed ? 0.85 : 1 },
         ]}
         onPress={() => router.push('/new')}
         accessibilityLabel="Create a moment"
       >
-        <Text style={styles.fabPlus}>+</Text>
+        <Text style={[styles.fabPlus, { color: theme.onText }]}>+</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -147,19 +150,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-  // iOS large-title style.
   title: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 10,
   },
   count: {
-    marginTop: 2,
-    fontSize: 15,
+    marginTop: 6,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   calendarButton: {
     width: 44,
@@ -168,49 +172,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 110,
-    gap: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 120,
+    gap: 20,
   },
   listEmpty: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
   },
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 80,
+    paddingBottom: 90,
+  },
+  emptyKicker: {
+    fontSize: 12,
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginBottom: 14,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
   emptySubtitle: {
-    marginTop: 8,
+    marginTop: 12,
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 24,
     textAlign: 'center',
   },
   fab: {
     position: 'absolute',
-    right: 24,
-    bottom: 44,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    right: 28,
+    bottom: 48,
+    width: 62,
+    height: 62,
+    borderRadius: 31,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
     elevation: 8,
   },
   fabPlus: {
     fontSize: 32,
     lineHeight: 34,
-    color: '#fff',
     fontWeight: '300',
     marginTop: -2,
   },

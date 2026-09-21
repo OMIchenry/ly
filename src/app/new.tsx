@@ -112,7 +112,7 @@ export default function NewMomentScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* iOS-style navigation bar: Cancel | Title | Save */}
+        {/* iOS-style navigation bar */}
         <View
           style={[
             styles.navBar,
@@ -124,7 +124,7 @@ export default function NewMomentScreen() {
             hitSlop={12}
             style={styles.navSide}
           >
-            <Text style={[styles.navAction, { color: theme.blue }]}>Cancel</Text>
+            <Text style={[styles.navAction, { color: theme.text }]}>Cancel</Text>
           </Pressable>
           <Text style={[styles.navTitle, { color: theme.text }]}>
             New Moment
@@ -140,7 +140,7 @@ export default function NewMomentScreen() {
               style={[
                 styles.navAction,
                 styles.navSave,
-                { color: canSave ? theme.blue : theme.secondaryText },
+                { color: theme.text, opacity: canSave ? 1 : 0.3 },
               ]}
             >
               {saving ? 'Saving…' : 'Save'}
@@ -155,7 +155,7 @@ export default function NewMomentScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Pressable
-            style={[styles.photoWell, { backgroundColor: theme.well }]}
+            style={[styles.archWell, { backgroundColor: theme.well }]}
             onPress={choosePhotoSource}
             accessibilityLabel="Add a photo"
           >
@@ -164,19 +164,19 @@ export default function NewMomentScreen() {
             ) : (
               <View style={styles.photoPlaceholder}>
                 <View
-                  style={[styles.addCircle, { backgroundColor: theme.blue }]}
+                  style={[styles.addCircle, { backgroundColor: theme.text }]}
                 >
-                  <Text style={styles.addCirclePlus}>+</Text>
+                  <Text style={[styles.addCirclePlus, { color: theme.onText }]}>+</Text>
                 </View>
-                <Text style={[styles.addPhotoText, { color: theme.blue }]}>
-                  Add Photo
+                <Text style={[styles.addPhotoText, { color: theme.secondaryText }]}>
+                  Add a photo
                 </Text>
               </View>
             )}
           </Pressable>
           {photoUri ? (
             <Pressable onPress={choosePhotoSource} hitSlop={8}>
-              <Text style={[styles.changePhoto, { color: theme.blue }]}>
+              <Text style={[styles.changePhoto, { color: theme.secondaryText }]}>
                 Change photo
               </Text>
             </Pressable>
@@ -186,7 +186,7 @@ export default function NewMomentScreen() {
             <TextInput
               style={[styles.input, { color: theme.text }]}
               placeholder="What do you want to remember?"
-              placeholderTextColor={theme.dark ? 'rgba(235,235,245,0.3)' : '#aeaeb2'}
+              placeholderTextColor={theme.secondaryText}
               value={text}
               onChangeText={setText}
               multiline
@@ -208,8 +208,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   navSide: {
@@ -217,72 +217,78 @@ const styles = StyleSheet.create({
   },
   navAction: {
     fontSize: 17,
+    letterSpacing: 0.2,
   },
   navSave: {
     fontWeight: '600',
     textAlign: 'right',
   },
   navTitle: {
-    fontSize: 17,
+    fontSize: 13,
     fontWeight: '600',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
   },
   body: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
-  photoWell: {
-    borderRadius: 16,
+  // Signature arch frame for the photo.
+  archWell: {
+    height: 320,
+    borderTopLeftRadius: 200,
+    borderTopRightRadius: 200,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
     overflow: 'hidden',
   },
   photo: {
     width: '100%',
-    aspectRatio: 4 / 3,
+    height: '100%',
   },
   photoPlaceholder: {
-    aspectRatio: 16 / 10,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addCirclePlus: {
-    fontSize: 26,
-    lineHeight: 28,
-    color: '#fff',
+    fontSize: 28,
+    lineHeight: 30,
     fontWeight: '300',
     marginTop: -2,
   },
   addPhotoText: {
-    marginTop: 10,
-    fontSize: 17,
-    fontWeight: '500',
+    marginTop: 14,
+    fontSize: 13,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
   },
   changePhoto: {
-    marginTop: 10,
-    fontSize: 15,
+    marginTop: 14,
+    fontSize: 13,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     textAlign: 'center',
   },
   textCard: {
-    marginTop: 16,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginTop: 20,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
   },
   input: {
     fontSize: 17,
-    lineHeight: 24,
-    minHeight: 120,
+    lineHeight: 26,
+    letterSpacing: 0.2,
+    minHeight: 110,
     textAlignVertical: 'top',
   },
 });

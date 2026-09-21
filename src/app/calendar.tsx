@@ -81,7 +81,7 @@ export default function CalendarScreen() {
         ]}
       >
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.navSide}>
-          <Text style={[styles.back, { color: theme.blue }]}>‹ Moments</Text>
+          <Text style={[styles.back, { color: theme.text }]}>‹ Moments</Text>
         </Pressable>
         <Text style={[styles.navTitle, { color: theme.text }]}>Calendar</Text>
         <View style={styles.navSide} />
@@ -100,7 +100,7 @@ export default function CalendarScreen() {
             style={styles.monthButton}
             accessibilityLabel="Previous month"
           >
-            <Chevron direction="left" color={theme.blue} />
+            <Chevron direction="left" color={theme.text} />
           </Pressable>
           <Text style={[styles.monthTitle, { color: theme.text }]}>
             {monthTitle(viewYear, viewMonth)}
@@ -111,7 +111,7 @@ export default function CalendarScreen() {
             style={styles.monthButton}
             accessibilityLabel="Next month"
           >
-            <Chevron direction="right" color={theme.blue} />
+            <Chevron direction="right" color={theme.text} />
           </Pressable>
         </View>
 
@@ -145,6 +145,7 @@ export default function CalendarScreen() {
                   style={[
                     styles.dayCircle,
                     isSelected && { backgroundColor: theme.text },
+                    isToday && !isSelected && { borderColor: theme.text, borderWidth: 1.2 },
                   ]}
                 >
                   <Text
@@ -152,8 +153,7 @@ export default function CalendarScreen() {
                       styles.dayNumber,
                       { color: theme.text },
                       !inMonth && { color: theme.secondaryText, opacity: 0.35 },
-                      isToday && !isSelected && { color: theme.blue, fontWeight: '600' },
-                      isSelected && { color: theme.background, fontWeight: '600' },
+                      isSelected && { color: theme.onText, fontWeight: '600' },
                     ]}
                   >
                     {date.getDate()}
@@ -166,7 +166,7 @@ export default function CalendarScreen() {
                         styles.dot,
                         {
                           backgroundColor: isSelected
-                            ? theme.background
+                            ? theme.onText
                             : theme.secondaryText,
                         },
                       ]}
@@ -180,15 +180,13 @@ export default function CalendarScreen() {
 
         {/* Selected day's moments */}
         <View style={styles.daySection}>
+          <Text style={[styles.dayKicker, { color: theme.secondaryText }]}>
+            {selectedMoments.length}{' '}
+            {selectedMoments.length === 1 ? 'moment' : 'moments'}
+          </Text>
           <Text style={[styles.dayTitle, { color: theme.text }]}>
             {fullDayTitle(selected)}
           </Text>
-          {selectedMoments.length > 0 ? (
-            <Text style={[styles.dayCount, { color: theme.secondaryText }]}>
-              {selectedMoments.length}{' '}
-              {selectedMoments.length === 1 ? 'moment' : 'moments'}
-            </Text>
-          ) : null}
         </View>
 
         {selectedMoments.length === 0 ? (
@@ -214,48 +212,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   navSide: { minWidth: 80 },
   back: { fontSize: 17 },
-  navTitle: { fontSize: 17, fontWeight: '600' },
+  navTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+  },
   body: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
+    paddingBottom: 48,
   },
   monthRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 16,
   },
   monthButton: {
     width: 44,
     alignItems: 'center',
   },
   chevron: {
-    fontSize: 30,
-    lineHeight: 32,
-    fontWeight: '300',
+    fontSize: 32,
+    lineHeight: 34,
+    fontWeight: '200',
   },
   monthTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    letterSpacing: 0.5,
   },
   weekRow: {
     flexDirection: 'row',
     paddingTop: 4,
-    paddingBottom: 8,
+    paddingBottom: 10,
   },
   weekday: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
+    letterSpacing: 1,
   },
   grid: {
     flexDirection: 'row',
@@ -264,12 +268,12 @@ const styles = StyleSheet.create({
   cell: {
     width: `${100 / 7}%`,
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingVertical: 3,
   },
   dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -282,27 +286,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   daySection: {
-    marginTop: 20,
-    marginBottom: 12,
+    marginTop: 28,
+    marginBottom: 16,
+  },
+  dayKicker: {
+    fontSize: 12,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   dayTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-  },
-  dayCount: {
-    marginTop: 2,
-    fontSize: 14,
+    letterSpacing: 0.3,
   },
   noMoments: {
     fontSize: 15,
     paddingVertical: 8,
   },
   momentList: {
-    gap: 14,
+    gap: 20,
   },
 });

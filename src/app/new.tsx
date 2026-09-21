@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -18,18 +18,28 @@ import { useTheme } from '../theme';
 import { choosePhoto } from '../photo';
 import { captureContext } from '../context';
 import { DEFAULT_PHOTO_SHAPE, photoFrameStyle, type PhotoShape } from '../shapes';
+import { generateTitle } from '../titles';
 import { ShapePicker } from '../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
 export default function NewMomentScreen() {
   const theme = useTheme();
   const [text, setText] = useState('');
+  const [title, setTitle] = useState('');
+  const [titleTouched, setTitleTouched] = useState(false);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [photoShape, setPhotoShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const canSave = text.trim().length > 0 && !saving;
+
+  // Live title suggestion from what we know so far (text + time of day).
+  // Location and weather join in at save time.
+  const titleSuggestion = useMemo(
+    () => generateTitle({ text, createdAt: new Date().toISOString() }),
+    [text],
+  );
 
   async function handleChoosePhoto() {
     const uri = await choosePhoto();
@@ -42,9 +52,22 @@ export default function NewMomentScreen() {
     try {
       // Quietly stamp location + weather — never blocks the save.
       const ctx = await captureContext();
+      const createdAt = new Date().toISOString();
+      const trimmed = text.trim();
+      // Untouched title field → generate from full context (now including
+      // location + weather). Cleared field → same. Custom text → keep it.
+      const finalTitle =
+        (titleTouched && title.trim()) ||
+        generateTitle({
+          text: trimmed,
+          createdAt,
+          locationName: ctx.locationName,
+          weather: ctx.weather,
+        });
       await saveMoment({
         id: newId(),
-        text: text.trim(),
+        title: finalTitle,
+        text: trimmed,
         photoUri,
         photoShape,
         audioUri,
@@ -52,7 +75,7 @@ export default function NewMomentScreen() {
         weather: ctx.weather,
         latitude: ctx.latitude,
         longitude: ctx.longitude,
-        createdAt: new Date().toISOString(),
+        createdAt,
       });
       router.back();
     } finally {
@@ -142,6 +165,23 @@ export default function NewMomentScreen() {
               </Text>
             </Pressable>
           ) : null}
+
+          <View style={[styles.titleCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.titleLabel, { color: theme.secondaryText }]}>
+              {titleTouched ? 'Title' : 'Title · auto'}
+            </Text>
+            <TextInput
+              style={[styles.titleInput, { color: theme.text }]}
+              value={titleTouched ? title : titleSuggestion}
+              onChangeText={(t) => {
+                setTitle(t);
+                setTitleTouched(true);
+              }}
+              placeholder="Title"
+              placeholderTextColor={theme.secondaryText}
+              accessibilityLabel="Moment title"
+            />
+          </View>
 
           <View style={[styles.textCard, { backgroundColor: theme.card }]}>
             <TextInput
@@ -267,6 +307,26 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 22,
     paddingVertical: 20,
+  },
+  titleCard: {
+    marginTop: 20,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 16,
+  },
+  titleLabel: {
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    opacity: 0.8,
+  },
+  titleInput: {
+    marginTop: 6,
+    fontSize: 19,
+    lineHeight: 26,
+    letterSpacing: 0.2,
+    fontWeight: '600',
   },
   input: {
     fontSize: 17,

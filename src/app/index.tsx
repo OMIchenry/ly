@@ -28,6 +28,7 @@ import {
   refreshOnThisDayReminder,
 } from '../notifications';
 import { confirmDeleteMoment } from '../deleteMoment';
+import { displayTitle } from '../titles';
 import type { Theme } from '../theme';
 import type { Moment } from '../types';
 
@@ -256,6 +257,7 @@ export default function HomeScreen() {
     return moments.filter(
       (m) =>
         m.text.toLowerCase().includes(q) ||
+        displayTitle(m).toLowerCase().includes(q) ||
         (m.locationName ?? '').toLowerCase().includes(q),
     );
   }, [moments, query, searching]);

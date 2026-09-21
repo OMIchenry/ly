@@ -18,6 +18,9 @@ export interface Moment {
   photoUri: string | null;
   /** Local file URI of the attached voice note, or null. */
   audioUri?: string | null;
+  /** Auto-generated title, editable by the user. Older moments without one
+      get a generated fallback at render time via displayTitle(). */
+  title?: string | null;
   /** Frame shape for the photo. Older moments without this render as square. */
   photoShape?: PhotoShape | null;
   /** Coordinates captured with the moment, for the map view. */

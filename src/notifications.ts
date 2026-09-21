@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import type { Moment } from './types';
+import { displayTitle } from './titles';
 
 // Show the reminder even if the app happens to be open.
 Notifications.setNotificationHandler({
@@ -58,7 +59,7 @@ export async function refreshOnThisDayReminder(
     let body: string;
     if (otd.length === 1) {
       const yearsAgo = currentYear - new Date(otd[0].createdAt).getFullYear();
-      const text = otd[0].text.trim();
+      const text = displayTitle(otd[0]);
       const snippet =
         text.length > 90 ? text.slice(0, 90).trimEnd() + '…' : text;
       body =

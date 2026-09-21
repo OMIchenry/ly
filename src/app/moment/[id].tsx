@@ -20,6 +20,7 @@ import { MomentPhoto } from '../../components/MomentPhoto';
 import { ShapePicker } from '../../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../../components/VoiceNote';
 import { formatDate } from '../../components/MomentCard';
+import { displayTitle, generateTitle } from '../../titles';
 import type { Moment } from '../../types';
 
 function metaLine(moment: Moment): string {
@@ -35,6 +36,8 @@ export default function MomentDetailScreen() {
   const [moment, setMoment] = useState<Moment | null>(null);
   const [editing, setEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
+  const [draftTitle, setDraftTitle] = useState('');
+  const [draftTitleTouched, setDraftTitleTouched] = useState(false);
   const [draftPhoto, setDraftPhoto] = useState<string | null>(null);
   const [draftShape, setDraftShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [draftAudio, setDraftAudio] = useState<string | null>(null);
@@ -53,6 +56,8 @@ export default function MomentDetailScreen() {
   function beginEdit() {
     if (!moment) return;
     setDraftText(moment.text);
+    setDraftTitle(moment.title ?? '');
+    setDraftTitleTouched(!!(moment.title ?? '').trim());
     setDraftPhoto(moment.photoUri);
     setDraftShape(moment.photoShape ?? DEFAULT_PHOTO_SHAPE);
     setDraftAudio(moment.audioUri ?? null);
@@ -63,8 +68,18 @@ export default function MomentDetailScreen() {
     if (!moment || draftText.trim().length === 0 || saving) return;
     setSaving(true);
     try {
+      const trimmedText = draftText.trim();
+      const finalTitle =
+        (draftTitleTouched && draftTitle.trim()) ||
+        generateTitle({
+          text: trimmedText,
+          createdAt: moment.createdAt,
+          locationName: moment.locationName,
+          weather: moment.weather,
+        });
       const updated = await updateMoment(moment.id, {
-        text: draftText.trim(),
+        title: finalTitle,
+        text: trimmedText,
         photoUri: draftPhoto,
         photoShape: draftShape,
         audioUri: draftAudio,
@@ -188,6 +203,32 @@ export default function MomentDetailScreen() {
               </Pressable>
             ) : null}
 
+            <View style={[styles.titleCard, { backgroundColor: theme.card }]}>
+              <Text style={[styles.titleLabel, { color: theme.secondaryText }]}>
+                {draftTitleTouched ? 'Title' : 'Title · auto'}
+              </Text>
+              <TextInput
+                style={[styles.titleInput, { color: theme.text }]}
+                value={
+                  draftTitleTouched
+                    ? draftTitle
+                    : generateTitle({
+                        text: draftText,
+                        createdAt: moment.createdAt,
+                        locationName: moment.locationName,
+                        weather: moment.weather,
+                      })
+                }
+                onChangeText={(t) => {
+                  setDraftTitle(t);
+                  setDraftTitleTouched(true);
+                }}
+                placeholder="Title"
+                placeholderTextColor={theme.secondaryText}
+                accessibilityLabel="Moment title"
+              />
+            </View>
+
             <View style={[styles.textCard, { backgroundColor: theme.card }]}>
               <TextInput
                 style={[styles.input, { color: theme.text }]}
@@ -231,7 +272,12 @@ export default function MomentDetailScreen() {
                 style={styles.photoView}
               />
             ) : null}
-            <Text style={[styles.text, { color: theme.text }]}>{moment.text}</Text>
+            <Text style={[styles.detailTitle, { color: theme.text }]}>
+              {displayTitle(moment)}
+            </Text>
+            {displayTitle(moment) !== moment.text ? (
+              <Text style={[styles.text, { color: theme.text }]}>{moment.text}</Text>
+            ) : null}
             <Text style={[styles.meta, { color: theme.secondaryText }]}>
               {metaLine(moment)}
             </Text>
@@ -326,6 +372,33 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     paddingHorizontal: 22,
     paddingVertical: 20,
+  },
+  titleCard: {
+    marginTop: 20,
+    borderRadius: 24,
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    paddingBottom: 16,
+  },
+  titleLabel: {
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    opacity: 0.8,
+  },
+  titleInput: {
+    marginTop: 6,
+    fontSize: 19,
+    lineHeight: 26,
+    letterSpacing: 0.2,
+    fontWeight: '600',
+  },
+  detailTitle: {
+    fontSize: 24,
+    lineHeight: 32,
+    letterSpacing: 0.2,
+    fontWeight: '600',
+    marginBottom: 14,
   },
   input: {
     fontSize: 17,

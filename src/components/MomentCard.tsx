@@ -47,7 +47,11 @@ export function MomentCard({
         />
       ) : null}
       <View style={styles.cardBody}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>{title}</Text>
+        <Text
+          style={[styles.cardTitle, { color: theme.text, fontFamily: theme.serif }]}
+        >
+          {title}
+        </Text>
         {showText ? (
           <Text
             style={[styles.cardText, { color: theme.secondaryText }]}
@@ -71,41 +75,46 @@ export function MomentCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 28,
+    borderRadius: 20,
     overflow: 'hidden',
+    // Gallery float: soft, deep shadow on paper.
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 4,
   },
   photoMargins: {
-    marginHorizontal: 14,
-    marginTop: 14,
+    marginHorizontal: 16,
+    marginTop: 16,
   },
   cardBody: {
-    paddingHorizontal: 22,
-    paddingTop: 18,
-    paddingBottom: 22,
+    paddingHorizontal: 26,
+    paddingTop: 22,
+    paddingBottom: 26,
   },
   cardTitle: {
-    fontSize: 17,
-    lineHeight: 24,
+    fontSize: 21,
+    lineHeight: 29,
     letterSpacing: 0.2,
-    fontWeight: '600',
   },
   cardText: {
-    marginTop: 6,
+    marginTop: 8,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 23,
     letterSpacing: 0.2,
   },
   cardPeople: {
-    marginTop: 8,
-    fontSize: 12,
-    letterSpacing: 1.5,
+    marginTop: 10,
+    fontSize: 11,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     opacity: 0.8,
   },
   cardDate: {
-    marginTop: 10,
-    fontSize: 12,
-    letterSpacing: 1.5,
+    marginTop: 12,
+    fontSize: 11,
+    letterSpacing: 2,
     textTransform: 'uppercase',
   },
 });

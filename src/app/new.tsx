@@ -144,7 +144,12 @@ export default function NewMomentScreen() {
           >
             <Text style={[styles.navAction, { color: theme.text }]}>Cancel</Text>
           </Pressable>
-          <Text style={[styles.navTitle, { color: theme.text }]}>
+          <Text
+            style={[
+              styles.navTitle,
+              { color: theme.text, fontFamily: theme.serif },
+            ]}
+          >
             New Moment
           </Text>
           <Pressable

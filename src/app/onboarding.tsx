@@ -51,7 +51,7 @@ export default function OnboardingScreen() {
             </Text>
             <Text style={[styles.sub, { color: theme.secondaryText }]}>
               Journaling felt like too much work. So LY asks for one small
-              moment a day — a line, a photo, a voice note. That's the whole app.
+              moment a day — a line, a photo, a voice note. That&apos;s the whole app.
             </Text>
           </>
         ) : null}

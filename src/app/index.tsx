@@ -162,49 +162,71 @@ function EggCard({ egg, theme }: { egg: EggResult | null; theme: Theme }) {
           ? `${eggCaption(egg.count)} · ${egg.nextMilestone - egg.count}d to ${egg.nextMilestone}`
           : eggCaption(egg.count);
   return (
-    <View style={[styles.eggCard, { backgroundColor: theme.card }]}>
+    <View style={styles.streakBlock}>
       <View style={{ opacity: egg.paused ? 0.45 : 1 }}>
-        <Egg stage={egg.stage} color={theme.text} soft={theme.card} size={58} />
+        <Egg stage={egg.stage} color={theme.text} soft={theme.background} size={84} />
       </View>
-      <View style={styles.eggText}>
-        <Text style={[styles.eggCount, { color: theme.text }]}>
-          {egg.count} {egg.count === 1 ? 'day' : 'days'}
-          {egg.paused ? ' · paused' : ''}
-        </Text>
-        <Text style={[styles.eggCaption, { color: theme.secondaryText }]}>
-          {caption}
-        </Text>
-        <View style={styles.eggMetaRow}>
-          {egg.freezes > 0 ? (
-            <View style={[styles.freezePill, { borderColor: theme.secondaryText }]}>
-              <Text style={[styles.freezeText, { color: theme.secondaryText }]}>
-                {egg.freezes} {egg.freezes === 1 ? 'freeze' : 'freezes'}
-              </Text>
-            </View>
-          ) : null}
-          {egg.paused ? (
-            <View style={[styles.freezePill, { backgroundColor: theme.text }]}>
-              <Text style={[styles.freezeText, { color: theme.onText }]}>
-                Repair today
-              </Text>
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.historyStrip}>
-          {egg.history.map((hit, i) => (
-            <View
-              key={i}
-              style={[
-                styles.historyDot,
-                {
-                  backgroundColor: hit ? theme.text : theme.separator,
-                  opacity: hit ? 1 : 0.5,
-                },
-              ]}
-            />
-          ))}
-        </View>
+      <Text style={[styles.streakKicker, { color: theme.secondaryText }]}>
+        Current streak
+      </Text>
+      <Text
+        style={[styles.streakCount, { color: theme.text, fontFamily: theme.serif }]}
+      >
+        {egg.count} {egg.count === 1 ? 'day' : 'days'}
+        {egg.paused ? ' · paused' : ''}
+      </Text>
+      <Text style={[styles.streakCaption, { color: theme.secondaryText }]}>
+        {caption}
+      </Text>
+      <View style={styles.eggMetaRow}>
+        {egg.freezes > 0 ? (
+          <View style={[styles.freezePill, { borderColor: theme.secondaryText }]}>
+            <Text style={[styles.freezeText, { color: theme.secondaryText }]}>
+              {egg.freezes} {egg.freezes === 1 ? 'freeze' : 'freezes'}
+            </Text>
+          </View>
+        ) : null}
+        {egg.paused ? (
+          <View style={[styles.freezePill, { backgroundColor: theme.text }]}>
+            <Text style={[styles.freezeText, { color: theme.onText }]}>
+              Repair today
+            </Text>
+          </View>
+        ) : null}
       </View>
+      <View style={styles.historyStrip}>
+        {egg.history.map((hit, i) => (
+          <View
+            key={i}
+            style={[
+              styles.historyDot,
+              {
+                backgroundColor: hit ? theme.text : theme.separator,
+                opacity: hit ? 1 : 0.5,
+              },
+            ]}
+          />
+        ))}
+      </View>
+      <View style={[styles.hairline, { backgroundColor: theme.separator }]} />
+    </View>
+  );
+}
+
+function SectionKicker({
+  children,
+  theme,
+}: {
+  children: string;
+  theme: Theme;
+}) {
+  return (
+    <View style={styles.kickerRow}>
+      <View style={[styles.kickerLine, { backgroundColor: theme.separator }]} />
+      <Text style={[styles.sectionKicker, { color: theme.secondaryText }]}>
+        {children}
+      </Text>
+      <View style={[styles.kickerLine, { backgroundColor: theme.separator }]} />
     </View>
   );
 }
@@ -219,9 +241,7 @@ function OnThisDay({
   if (moments.length === 0) return null;
   return (
     <View style={styles.onThisDay}>
-      <Text style={[styles.sectionKicker, { color: theme.secondaryText }]}>
-        On this day
-      </Text>
+      <SectionKicker theme={theme}>On this day</SectionKicker>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -233,7 +253,12 @@ function OnThisDay({
             style={[styles.memoryChip, { backgroundColor: theme.card }]}
             onPress={() => router.push(`/moment/${m.id}`)}
           >
-            <Text style={[styles.memoryYear, { color: theme.text }]}>
+            <Text
+              style={[
+                styles.memoryYear,
+                { color: theme.text, fontFamily: theme.serif },
+              ]}
+            >
               {new Date(m.createdAt).getFullYear()}
             </Text>
             <Text
@@ -255,7 +280,12 @@ function EmptyState({ theme, searching }: { theme: Theme; searching: boolean }) 
       <Text style={[styles.emptyKicker, { color: theme.secondaryText }]}>
         {searching ? 'No matches' : 'Begin anywhere'}
       </Text>
-      <Text style={[styles.emptyTitle, { color: theme.text }]}>
+      <Text
+        style={[
+          styles.emptyTitle,
+          { color: theme.text, fontFamily: theme.serif },
+        ]}
+      >
         {searching ? 'Nothing found' : 'No moments yet'}
       </Text>
       {!searching ? (
@@ -363,40 +393,48 @@ export default function HomeScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="auto" />
 
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: theme.text }]}>LY</Text>
+      <View style={styles.masthead}>
+        <Text style={[styles.mastheadTitle, { color: theme.text, fontFamily: theme.serif }]}>
+          LY
+        </Text>
+        <Text style={[styles.mastheadKicker, { color: theme.secondaryText }]}>
+          Journal · Reflect · Preserve
+        </Text>
+        <View style={[styles.hairline, { backgroundColor: theme.separator }]} />
+        <View style={styles.utilityRow}>
           {moments.length > 0 ? (
-            <Text style={[styles.count, { color: theme.secondaryText }]}>
+            <Text style={[styles.momentCount, { color: theme.secondaryText }]}>
               {moments.length} {moments.length === 1 ? 'moment' : 'moments'}
             </Text>
-          ) : null}
-        </View>
-        <View style={styles.headerButtons}>
-          <Pressable
-            onPress={() => router.push('/map')}
-            hitSlop={12}
-            style={styles.headerButton}
-            accessibilityLabel="Open map"
-          >
-            <MapGlyph color={theme.text} />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/calendar')}
-            hitSlop={12}
-            style={styles.headerButton}
-            accessibilityLabel="Open calendar"
-          >
-            <CalendarGlyph color={theme.text} />
-          </Pressable>
-          <Pressable
-            onPress={openMoreMenu}
-            hitSlop={12}
-            style={styles.headerButton}
-            accessibilityLabel="More options"
-          >
-            <MoreGlyph color={theme.text} />
-          </Pressable>
+          ) : (
+            <View />
+          )}
+          <View style={styles.headerButtons}>
+            <Pressable
+              onPress={() => router.push('/map')}
+              hitSlop={12}
+              style={styles.headerButton}
+              accessibilityLabel="Open map"
+            >
+              <MapGlyph color={theme.text} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/calendar')}
+              hitSlop={12}
+              style={styles.headerButton}
+              accessibilityLabel="Open calendar"
+            >
+              <CalendarGlyph color={theme.text} />
+            </Pressable>
+            <Pressable
+              onPress={openMoreMenu}
+              hitSlop={12}
+              style={styles.headerButton}
+              accessibilityLabel="More options"
+            >
+              <MoreGlyph color={theme.text} />
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -433,9 +471,7 @@ export default function HomeScreen() {
               <EggCard egg={egg} theme={theme} />
               <OnThisDay moments={onThisDay} theme={theme} />
               {moments.length > 0 ? (
-                <Text style={[styles.sectionKicker, { color: theme.secondaryText }]}>
-                  All moments
-                </Text>
+                <SectionKicker theme={theme}>All moments</SectionKicker>
               ) : null}
             </>
           )
@@ -470,7 +506,12 @@ export default function HomeScreen() {
               soft={theme.card}
               size={96}
             />
-            <Text style={[styles.milestoneTitle, { color: theme.text }]}>
+            <Text
+              style={[
+                styles.milestoneTitle,
+                { color: theme.text, fontFamily: theme.serif },
+              ]}
+            >
               {milestone}-day streak!
             </Text>
             <Text style={[styles.milestoneSub, { color: theme.secondaryText }]}>
@@ -495,21 +536,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  masthead: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 8,
+    alignItems: 'center',
+  },
+  mastheadTitle: {
+    fontSize: 76,
+    lineHeight: 82,
+    letterSpacing: 6,
+  },
+  mastheadKicker: {
+    marginTop: 2,
+    fontSize: 11,
+    letterSpacing: 5,
+    textTransform: 'uppercase',
+  },
+  hairline: {
+    height: StyleSheet.hairlineWidth,
+    alignSelf: 'stretch',
+    marginTop: 18,
+  },
+  utilityRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: 10,
-  },
-  count: {
+    alignSelf: 'stretch',
     marginTop: 6,
+  },
+  momentCount: {
     fontSize: 12,
     letterSpacing: 2,
     textTransform: 'uppercase',
@@ -551,27 +607,29 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
-  eggCard: {
-    flexDirection: 'row',
+  streakBlock: {
     alignItems: 'center',
-    borderRadius: 28,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    marginBottom: 24,
-    gap: 18,
+    paddingTop: 28,
+    marginBottom: 8,
   },
-  eggText: {
-    flex: 1,
+  streakKicker: {
+    marginTop: 20,
+    fontSize: 11,
+    letterSpacing: 4,
+    textTransform: 'uppercase',
   },
-  eggCount: {
-    fontSize: 22,
-    fontWeight: '700',
+  streakCount: {
+    marginTop: 6,
+    fontSize: 44,
+    lineHeight: 50,
     letterSpacing: 0.5,
   },
-  eggCaption: {
-    marginTop: 4,
-    fontSize: 13,
-    letterSpacing: 0.5,
+  streakCaption: {
+    marginTop: 8,
+    fontSize: 14,
+    letterSpacing: 0.3,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
   freezePill: {
     borderWidth: 1,
@@ -586,14 +644,17 @@ const styles = StyleSheet.create({
   },
   eggMetaRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
     gap: 8,
-    marginTop: 10,
+    marginTop: 14,
   },
   historyStrip: {
     flexDirection: 'row',
-    gap: 4,
-    marginTop: 12,
+    justifyContent: 'center',
+    gap: 5,
+    marginTop: 16,
     flexWrap: 'wrap',
+    paddingHorizontal: 48,
   },
   historyDot: {
     width: 7,
@@ -644,11 +705,20 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingRight: 20,
   },
+  kickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 16,
+  },
+  kickerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+  },
   sectionKicker: {
     fontSize: 12,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
-    marginBottom: 12,
   },
   memoryChip: {
     width: 190,
@@ -657,9 +727,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   memoryYear: {
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 24,
     marginBottom: 6,
   },
   memoryText: {

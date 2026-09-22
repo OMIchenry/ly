@@ -291,7 +291,12 @@ export default function MomentDetailScreen() {
                 style={styles.photoView}
               />
             ) : null}
-            <Text style={[styles.detailTitle, { color: theme.text }]}>
+            <Text
+              style={[
+                styles.detailTitle,
+                { color: theme.text, fontFamily: theme.serif },
+              ]}
+            >
               {displayTitle(moment)}
             </Text>
             {displayTitle(moment) !== moment.text ? (
@@ -433,10 +438,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   detailTitle: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 28,
+    lineHeight: 36,
     letterSpacing: 0.2,
-    fontWeight: '600',
     marginBottom: 14,
   },
   input: {

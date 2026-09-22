@@ -22,13 +22,22 @@ interface Stats {
   people: number;
   topPlaces: { name: string; count: number }[];
   topPeople: { name: string; count: number }[];
+  topWords: { word: string; count: number }[];
   months: { label: string; count: number }[];
   firstDate: string | null;
 }
 
+// Common words that carry no signal — filtered out of "patterns".
+const STOPWORDS = new Set(
+  'a,an,the,and,or,but,if,then,so,because,as,at,by,for,from,in,into,of,off,on,out,over,to,up,with,about,after,before,between,during,through,under,again,further,once,here,there,when,where,why,how,all,any,both,each,few,more,most,other,some,such,no,nor,not,only,own,same,than,too,very,can,will,just,don,should,now,was,were,are,is,be,been,being,have,has,had,having,do,does,did,doing,would,could,ought,i,me,my,myself,we,our,ours,ourselves,you,your,yours,yourself,yourselves,he,him,his,himself,she,her,hers,herself,it,its,itself,they,them,their,theirs,themselves,what,which,who,whom,this,that,these,those,am,very,really,got,get,go,going,went,day,today,yesterday,tomorrow,time,thing,things,lot,much,many,also,back,still,even,also,like,im,ive,dont,cant,wont,us'.split(
+    ',',
+  ),
+);
+
 function computeStats(moments: Moment[]): Stats {
   const placeCounts = new Map<string, number>();
   const peopleCounts = new Map<string, number>();
+  const wordCounts = new Map<string, number>();
   const monthCounts = new Map<string, number>();
   let photos = 0;
   let voiceNotes = 0;
@@ -41,6 +50,18 @@ function computeStats(moments: Moment[]): Stats {
     for (const p of m.people ?? []) {
       const name = p.trim();
       if (name) peopleCounts.set(name, (peopleCounts.get(name) ?? 0) + 1);
+    }
+    // Word patterns: lowercase tokens from title + text, minus stopwords.
+    const words = `${m.title ?? ''} ${m.text}`
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter((w) => w.length > 2 && !STOPWORDS.has(w));
+    const seenThisMoment = new Set<string>();
+    for (const w of words) {
+      if (seenThisMoment.has(w)) continue; // count once per moment
+      seenThisMoment.add(w);
+      wordCounts.set(w, (wordCounts.get(w) ?? 0) + 1);
     }
     const d = new Date(m.createdAt);
     const key = `${d.getFullYear()}-${d.getMonth()}`;
@@ -73,6 +94,7 @@ function computeStats(moments: Moment[]): Stats {
     people: peopleCounts.size,
     topPlaces: top(placeCounts),
     topPeople: top(peopleCounts),
+    topWords: top(wordCounts).map(({ name, count }) => ({ word: name, count })),
     months,
     firstDate: moments.length > 0 ? moments[moments.length - 1].createdAt : null,
   };
@@ -262,6 +284,34 @@ export default function StatsScreen() {
           </>
         ) : null}
 
+        {stats.topWords.length > 0 ? (
+          <>
+            <Kicker theme={theme}>Patterns</Kicker>
+            <View style={[styles.card, { backgroundColor: theme.card }]}>
+              <Text style={[styles.patternsLede, { color: theme.secondaryText }]}>
+                Words that keep showing up in your moments
+              </Text>
+              <View style={styles.wordCloud}>
+                {stats.topWords.map((w) => (
+                  <View
+                    key={w.word}
+                    style={[styles.wordPill, { borderColor: theme.separator }]}
+                  >
+                    <Text style={[styles.wordText, { color: theme.text }]}>
+                      {w.word}
+                    </Text>
+                    <Text
+                      style={[styles.wordCount, { color: theme.secondaryText }]}
+                    >
+                      ×{w.count}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </>
+        ) : null}
+
         {stats.total === 0 ? (
           <Text style={[styles.emptyNote, { color: theme.secondaryText }]}>
             Save your first moment and your statistics will grow here.
@@ -356,6 +406,29 @@ const styles = StyleSheet.create({
   rankNum: { fontSize: 20, width: 24, textAlign: 'center' },
   rankName: { flex: 1, fontSize: 16, letterSpacing: 0.2 },
   rankCount: { fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
+  patternsLede: {
+    fontSize: 13,
+    letterSpacing: 0.3,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  wordCloud: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  wordPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  wordText: { fontSize: 15, letterSpacing: 0.2 },
+  wordCount: { fontSize: 12, letterSpacing: 0.5 },
   emptyNote: {
     marginTop: 32,
     fontSize: 15,

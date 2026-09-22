@@ -51,7 +51,13 @@ export default function PhotosScreen() {
           <Text style={[styles.back, { color: theme.text }]}>‹ Moments</Text>
         </Pressable>
         <Text style={[styles.navTitle, { color: theme.text }]}>Photos</Text>
-        <View style={styles.navSide} />
+        <Pressable
+          onPress={() => router.push('/photo-dump')}
+          hitSlop={12}
+          style={styles.navSide}
+        >
+          <Text style={[styles.importAction, { color: theme.text }]}>Import</Text>
+        </Pressable>
       </View>
 
       <FlatList
@@ -109,6 +115,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2.5,
     textTransform: 'uppercase',
+  },
+  importAction: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   list: {
     paddingHorizontal: 20,

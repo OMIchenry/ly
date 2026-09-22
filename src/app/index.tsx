@@ -179,6 +179,44 @@ const statsGlyphStyles = StyleSheet.create({
   },
 });
 
+// Minimal line-style house glyph for the memory world.
+function WorldGlyph({ color }: { color: string }) {
+  return (
+    <View style={worldGlyphStyles.house}>
+      <View style={[worldGlyphStyles.roof, { borderBottomColor: color }]} />
+      <View
+        style={[
+          worldGlyphStyles.body,
+          { borderColor: color, borderTopWidth: 0 },
+        ]}
+      />
+    </View>
+  );
+}
+
+const worldGlyphStyles = StyleSheet.create({
+  house: {
+    alignItems: 'center',
+    height: 24,
+    justifyContent: 'flex-end',
+  },
+  roof: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 11,
+    borderRightWidth: 11,
+    borderBottomWidth: 9,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  body: {
+    width: 16,
+    height: 11,
+    borderWidth: 1.7,
+    marginTop: -1,
+  },
+});
+
 function EggCard({ egg, theme }: { egg: EggResult | null; theme: Theme }) {
   if (!egg) return null;
   const caption = egg.paused
@@ -411,6 +449,7 @@ export default function HomeScreen() {
     const options = [
       'Surprise me',
       'Photos',
+      'Time machine',
       trashCount > 0 ? `Recently Deleted (${trashCount})` : 'Recently Deleted',
       lockEnabled ? 'Face ID Lock: On' : 'Face ID Lock: Off',
       'Cancel',
@@ -433,8 +472,9 @@ export default function HomeScreen() {
             router.push(`/moment/${pick.id}`);
           }
         } else if (index === 1) router.push('/photos');
-        else if (index === 2) router.push('/trash');
-        else if (index === 3) {
+        else if (index === 2) router.push('/time-machine');
+        else if (index === 3) router.push('/trash');
+        else if (index === 4) {
           try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           } catch {
@@ -475,6 +515,14 @@ export default function HomeScreen() {
             <View />
           )}
           <View style={styles.headerButtons}>
+            <Pressable
+              onPress={() => router.push('/world')}
+              hitSlop={12}
+              style={styles.headerButton}
+              accessibilityLabel="Open your world"
+            >
+              <WorldGlyph color={theme.text} />
+            </Pressable>
             <Pressable
               onPress={() => router.push('/map')}
               hitSlop={12}

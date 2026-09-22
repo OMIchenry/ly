@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -9,11 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
 import { loadMoments } from '../storage';
 import { useTheme } from '../theme';
-import { MomentCard, formatDate } from '../components/MomentCard';
-import type { Theme } from '../theme';
+import { MomentCard } from '../components/MomentCard';
 import type { Moment } from '../types';
 
 const JUMPS = [
@@ -71,7 +69,13 @@ export default function TimeMachineScreen() {
         <Text style={[styles.title, { color: theme.text, fontFamily: theme.serif }]}>
           Time machine
         </Text>
-        <View style={styles.back} />
+        <Pressable
+          onPress={() => router.push('/wrapped')}
+          hitSlop={12}
+          style={styles.wrapped}
+        >
+          <Text style={[styles.wrappedText, { color: theme.text }]}>Wrapped</Text>
+        </Pressable>
       </View>
 
       <View style={styles.jumps}>
@@ -172,6 +176,13 @@ const styles = StyleSheet.create({
   },
   back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   backText: { fontSize: 30, fontWeight: '300', marginTop: -2 },
+  wrapped: {
+    minWidth: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wrappedText: { fontSize: 15, fontWeight: '600' },
   title: { fontSize: 24, letterSpacing: 0.3 },
   jumps: {
     flexDirection: 'row',

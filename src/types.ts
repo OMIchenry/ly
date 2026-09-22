@@ -34,4 +34,17 @@ export interface Moment {
   weather?: MomentWeather | null;
   /** ISO 8601 timestamp of when the moment was saved. */
   createdAt: string;
+  /** True when the user swiped right on this moment in the memory deck. */
+  favorite?: boolean;
+}
+
+/** A user-created named grouping of moments, e.g. "Japan trip". */
+export interface Collection {
+  id: string;
+  /** Display name chosen by the user. */
+  name: string;
+  /** Moment ids in the collection, newest-added first. */
+  momentIds: string[];
+  /** ISO 8601 timestamp of when the collection was created. */
+  createdAt: string;
 }

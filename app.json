@@ -48,7 +48,8 @@
           "locationWhenInUsePermission": "LY uses your location to quietly stamp where each moment happened."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-sharing"
     ]
   }
 }

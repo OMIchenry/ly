@@ -20,6 +20,7 @@ import { MomentPhoto } from '../../components/MomentPhoto';
 import { ShapePicker } from '../../components/ShapePicker';
 import { VoicePlayer, VoiceRecorder } from '../../components/VoiceNote';
 import { formatDate } from '../../components/MomentCard';
+import { CollectionPicker } from '../../components/CollectionPicker';
 import { displayTitle, generateTitle } from '../../titles';
 import { parsePeople } from '../new';
 import type { Moment } from '../../types';
@@ -44,6 +45,7 @@ export default function MomentDetailScreen() {
   const [draftShape, setDraftShape] = useState<PhotoShape>(DEFAULT_PHOTO_SHAPE);
   const [draftAudio, setDraftAudio] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -324,6 +326,15 @@ export default function MomentDetailScreen() {
                 <VoicePlayer uri={moment.audioUri} theme={theme} />
               </View>
             ) : null}
+            <Pressable
+              onPress={() => setPickerVisible(true)}
+              hitSlop={8}
+              style={styles.collectWrap}
+            >
+              <Text style={[styles.collect, { color: theme.text }]}>
+                Add to collection
+              </Text>
+            </Pressable>
             <Pressable onPress={handleDelete} hitSlop={8} style={styles.deleteWrap}>
               <Text style={[styles.delete, { color: theme.secondaryText }]}>
                 Delete this moment
@@ -332,6 +343,12 @@ export default function MomentDetailScreen() {
           </>
         )}
       </ScrollView>
+
+      <CollectionPicker
+        visible={pickerVisible}
+        momentId={moment.id}
+        onClose={() => setPickerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -489,8 +506,17 @@ const styles = StyleSheet.create({
   audioRowGrow: {
     flex: 1,
   },
+  collectWrap: {
+    marginTop: 28,
+    alignItems: 'center',
+  },
+  collect: {
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
   deleteWrap: {
-    marginTop: 36,
+    marginTop: 28,
     alignItems: 'center',
   },
   delete: {

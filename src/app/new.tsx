@@ -21,6 +21,8 @@ import { choosePhoto } from '../photo';
 import { captureContext } from '../context';
 import { DEFAULT_PHOTO_SHAPE, photoFrameStyle, type PhotoShape } from '../shapes';
 import { generateTitle } from '../titles';
+import { ShapePicker } from '../components/ShapePicker';
+import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
 /** "Maya, Jon" → ["Maya", "Jon"]. Dedupes (case-insensitive), drops empties,
     preserves first-seen casing and order. */
@@ -37,8 +39,6 @@ export function parsePeople(input: string): string[] {
   }
   return out;
 }
-import { ShapePicker } from '../components/ShapePicker';
-import { VoicePlayer, VoiceRecorder } from '../components/VoiceNote';
 
 export default function NewMomentScreen() {
   const theme = useTheme();

@@ -9,10 +9,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router } from 'expo-router';
-import { loadMoments } from '../storage';
-import { useTheme } from '../theme';
-import type { Theme } from '../theme';
-import type { Moment } from '../types';
+import { loadMoments } from '../../storage';
+import { computeObservations } from '../../observations';
+import { useTheme } from '../../theme';
+import type { Theme } from '../../theme';
+import type { Moment } from '../../types';
 
 interface Stats {
   total: number;
@@ -174,21 +175,26 @@ export default function StatsScreen() {
   }, []);
 
   const stats = useMemo(() => computeStats(moments), [moments]);
+  const observations = useMemo(() => computeObservations(moments), [moments]);
   const maxMonth = Math.max(1, ...stats.months.map((m) => m.count));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar style="auto" />
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-          <Text style={[styles.backText, { color: theme.text }]}>‹</Text>
-        </Pressable>
+        <View style={styles.back} />
         <Text
           style={[styles.title, { color: theme.text, fontFamily: theme.serif }]}
         >
           Your life in LY
         </Text>
-        <View style={styles.back} />
+        <Pressable
+          onPress={() => router.push('/wrapped')}
+          hitSlop={12}
+          style={styles.wrapped}
+        >
+          <Text style={[styles.wrappedText, { color: theme.text }]}>Wrapped</Text>
+        </Pressable>
       </View>
 
       <ScrollView
@@ -220,8 +226,35 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        <Kicker theme={theme}>Activity</Kicker>
-        <View style={[styles.card, { backgroundColor: theme.card }]}>
+        {observations.length > 0 ? (
+          <>
+            <Kicker theme={theme}>Observations</Kicker>
+            <View style={[styles.card, { backgroundColor: theme.card }]}>
+              {observations.map((o, i) => (
+                <View key={i}>
+                  <Text
+                    style={[
+                      styles.obsTitle,
+                      { color: theme.text, fontFamily: theme.serif },
+                    ]}
+                  >
+                    {o.title}
+                  </Text>
+                  <Text style={[styles.obsSub, { color: theme.secondaryText }]}>
+                    {o.sub}
+                  </Text>
+                  {i < observations.length - 1 ? (
+                    <View
+                      style={[styles.obsDivider, { backgroundColor: theme.separator }]}
+                    />
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          </>
+        ) : null}
+
+        <Kicker theme={theme}>Activity</Kicker>        <View style={[styles.card, { backgroundColor: theme.card }]}>
           <View style={styles.bars}>
             {stats.months.map((m) => (
               <View key={m.label} style={styles.barCol}>
@@ -331,9 +364,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  back: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  backText: { fontSize: 30, fontWeight: '300', marginTop: -2 },
+  back: { width: 60, height: 44 },
   title: { fontSize: 24, letterSpacing: 0.3 },
+  wrapped: {
+    minWidth: 60,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wrappedText: { fontSize: 15, fontWeight: '600' },
   list: { paddingHorizontal: 20, paddingBottom: 48 },
   since: {
     textAlign: 'center',
@@ -429,6 +468,21 @@ const styles = StyleSheet.create({
   },
   wordText: { fontSize: 15, letterSpacing: 0.2 },
   wordCount: { fontSize: 12, letterSpacing: 0.5 },
+  obsTitle: {
+    fontSize: 18,
+    lineHeight: 26,
+    letterSpacing: 0.2,
+  },
+  obsSub: {
+    marginTop: 6,
+    fontSize: 13,
+    lineHeight: 19,
+    letterSpacing: 0.2,
+  },
+  obsDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 16,
+  },
   emptyNote: {
     marginTop: 32,
     fontSize: 15,

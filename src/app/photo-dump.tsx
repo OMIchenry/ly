@@ -15,7 +15,6 @@ import * as Haptics from 'expo-haptics';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { newId, saveMoment } from '../storage';
 import { useTheme } from '../theme';
-import type { Theme } from '../theme';
 
 const MAX_SELECT = 20;
 const PAGE_SIZE = 120;

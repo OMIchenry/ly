@@ -1,3 +1,6 @@
+// Memories tab: the home timeline. Egg streak block, On This Day,
+// natural-language search, and the full moment list.
+
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
@@ -15,81 +18,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { loadMoments } from '../storage';
-import { useTheme } from '../theme';
-import { MomentCard } from '../components/MomentCard';
-import { Egg } from '../components/Egg';
+import { loadMoments, loadTrash } from '../../storage';
+import { useTheme } from '../../theme';
+import { MomentCard } from '../../components/MomentCard';
+import { Egg } from '../../components/Egg';
 import {
   eggCaption,
   eggStage,
   refreshEgg,
   type EggResult,
-} from '../streak';
+} from '../../streak';
 import {
   onThisDayMoments,
   refreshOnThisDayReminder,
-} from '../notifications';
-import { confirmDeleteMoment } from '../deleteMoment';
-import { displayTitle } from '../titles';
-import { loadTrash } from '../storage';
-import { useLock } from '../components/LockGate';
-import { checkMomentMilestones } from '../milestones';
-import type { Celebration } from '../milestones';
-import type { Theme } from '../theme';
-import type { Moment } from '../types';
-
-// Minimal line-style calendar glyph drawn with views (no icon font needed).
-function CalendarGlyph({ color }: { color: string }) {
-  return (
-    <View style={[glyphStyles.box, { borderColor: color }]}>
-      <View style={[glyphStyles.binder, { backgroundColor: color }]} />
-      <View style={[glyphStyles.binder, glyphStyles.binderRight, { backgroundColor: color }]} />
-      <View style={[glyphStyles.rule, { backgroundColor: color }]} />
-      <View style={glyphStyles.dots}>
-        <View style={[glyphStyles.dot, { backgroundColor: color }]} />
-        <View style={[glyphStyles.dot, { backgroundColor: color }]} />
-      </View>
-    </View>
-  );
-}
-
-const glyphStyles = StyleSheet.create({
-  box: {
-    width: 23,
-    height: 23,
-    borderRadius: 6,
-    borderWidth: 1.7,
-    alignItems: 'center',
-  },
-  binder: {
-    position: 'absolute',
-    top: -5,
-    left: 4,
-    width: 3,
-    height: 7,
-    borderRadius: 1.5,
-  },
-  binderRight: {
-    left: undefined,
-    right: 4,
-  },
-  rule: {
-    marginTop: 6,
-    width: '100%',
-    height: 1.7,
-    opacity: 0.85,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 4,
-    marginTop: 4.5,
-  },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-  },
-});
+} from '../../notifications';
+import { confirmDeleteMoment } from '../../deleteMoment';
+import { useLock } from '../../components/LockGate';
+import { checkMomentMilestones } from '../../milestones';
+import type { Celebration } from '../../milestones';
+import {
+  buildSearchContext,
+  matchesPlain,
+  matchesQuery,
+  parseQuery,
+  type ParsedQuery,
+} from '../../search';
+import type { Theme } from '../../theme';
+import type { Moment } from '../../types';
 
 // Horizontal ellipsis glyph for the "more" menu.
 function MoreGlyph({ color }: { color: string }) {
@@ -113,107 +68,6 @@ const moreGlyphStyles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-  },
-});
-
-// Minimal line-style map-pin glyph drawn with views (no icon font needed).
-function MapGlyph({ color }: { color: string }) {
-  return (
-    <View style={mapGlyphStyles.pin}>
-      <View style={[mapGlyphStyles.head, { borderColor: color }]}>
-        <View style={[mapGlyphStyles.headDot, { backgroundColor: color }]} />
-      </View>
-      <View style={[mapGlyphStyles.tail, { backgroundColor: color }]} />
-    </View>
-  );
-}
-
-const mapGlyphStyles = StyleSheet.create({
-  pin: {
-    alignItems: 'center',
-  },
-  head: {
-    width: 17,
-    height: 17,
-    borderRadius: 8.5,
-    borderWidth: 1.7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  tail: {
-    width: 1.7,
-    height: 7,
-    marginTop: -1,
-  },
-});
-
-// Minimal bar-chart glyph for the statistics screen.
-function StatsGlyph({ color }: { color: string }) {
-  return (
-    <View style={statsGlyphStyles.row}>
-      {[9, 16, 12].map((h, i) => (
-        <View
-          key={i}
-          style={[statsGlyphStyles.bar, { backgroundColor: color, height: h }]}
-        />
-      ))}
-    </View>
-  );
-}
-
-const statsGlyphStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3.5,
-    height: 24,
-  },
-  bar: {
-    width: 4.5,
-    borderRadius: 2.25,
-  },
-});
-
-// Minimal line-style house glyph for the memory world.
-function WorldGlyph({ color }: { color: string }) {
-  return (
-    <View style={worldGlyphStyles.house}>
-      <View style={[worldGlyphStyles.roof, { borderBottomColor: color }]} />
-      <View
-        style={[
-          worldGlyphStyles.body,
-          { borderColor: color, borderTopWidth: 0 },
-        ]}
-      />
-    </View>
-  );
-}
-
-const worldGlyphStyles = StyleSheet.create({
-  house: {
-    alignItems: 'center',
-    height: 24,
-    justifyContent: 'flex-end',
-  },
-  roof: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 11,
-    borderRightWidth: 11,
-    borderBottomWidth: 9,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-  },
-  body: {
-    width: 16,
-    height: 11,
-    borderWidth: 1.7,
-    marginTop: -1,
   },
 });
 
@@ -430,17 +284,22 @@ export default function HomeScreen() {
 
   const searching = query.trim().length > 0;
 
+  const parsed: ParsedQuery | null = useMemo(() => {
+    if (!searching) return null;
+    return parseQuery(query, buildSearchContext(moments));
+  }, [query, moments, searching]);
+
   const visibleMoments = useMemo(() => {
-    if (!searching) return moments;
-    const q = query.trim().toLowerCase();
-    return moments.filter(
-      (m) =>
-        m.text.toLowerCase().includes(q) ||
-        displayTitle(m).toLowerCase().includes(q) ||
-        (m.locationName ?? '').toLowerCase().includes(q) ||
-        (m.people ?? []).some((p) => p.toLowerCase().includes(q)),
-    );
-  }, [moments, query, searching]);
+    if (!searching || !parsed) return moments;
+    const hasFacets =
+      parsed.terms.length > 0 ||
+      parsed.people.length > 0 ||
+      parsed.places.length > 0 ||
+      parsed.from !== null ||
+      parsed.media !== null;
+    if (!hasFacets) return moments.filter((m) => matchesPlain(m, query));
+    return moments.filter((m) => matchesQuery(m, parsed));
+  }, [moments, query, searching, parsed]);
 
   // Same month/day as today, from previous years — newest year first.
   const onThisDay = useMemo(() => onThisDayMoments(moments), [moments]);
@@ -448,8 +307,7 @@ export default function HomeScreen() {
   function openMoreMenu() {
     const options = [
       'Surprise me',
-      'Photos',
-      'Time machine',
+      'Memory deck',
       trashCount > 0 ? `Recently Deleted (${trashCount})` : 'Recently Deleted',
       lockEnabled ? 'Face ID Lock: On' : 'Face ID Lock: Off',
       'Cancel',
@@ -471,10 +329,11 @@ export default function HomeScreen() {
             const pick = moments[Math.floor(Math.random() * moments.length)];
             router.push(`/moment/${pick.id}`);
           }
-        } else if (index === 1) router.push('/photos');
-        else if (index === 2) router.push('/time-machine');
-        else if (index === 3) router.push('/trash');
-        else if (index === 4) {
+        } else if (index === 1) {
+          router.push('/deck');
+        } else if (index === 2) {
+          router.push('/trash');
+        } else if (index === 3) {
           try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           } catch {
@@ -514,55 +373,21 @@ export default function HomeScreen() {
           ) : (
             <View />
           )}
-          <View style={styles.headerButtons}>
-            <Pressable
-              onPress={() => router.push('/world')}
-              hitSlop={12}
-              style={styles.headerButton}
-              accessibilityLabel="Open your world"
-            >
-              <WorldGlyph color={theme.text} />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/map')}
-              hitSlop={12}
-              style={styles.headerButton}
-              accessibilityLabel="Open map"
-            >
-              <MapGlyph color={theme.text} />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/stats')}
-              hitSlop={12}
-              style={styles.headerButton}
-              accessibilityLabel="Open statistics"
-            >
-              <StatsGlyph color={theme.text} />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push('/calendar')}
-              hitSlop={12}
-              style={styles.headerButton}
-              accessibilityLabel="Open calendar"
-            >
-              <CalendarGlyph color={theme.text} />
-            </Pressable>
-            <Pressable
-              onPress={openMoreMenu}
-              hitSlop={12}
-              style={styles.headerButton}
-              accessibilityLabel="More options"
-            >
-              <MoreGlyph color={theme.text} />
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={openMoreMenu}
+            hitSlop={12}
+            style={styles.headerButton}
+            accessibilityLabel="More options"
+          >
+            <MoreGlyph color={theme.text} />
+          </Pressable>
         </View>
       </View>
 
       <View style={[styles.searchWrap, { backgroundColor: theme.well }]}>
         <TextInput
           style={[styles.search, { color: theme.text }]}
-          placeholder="Search moments"
+          placeholder="Search moments — try “photos last month”"
           placeholderTextColor={theme.secondaryText}
           value={query}
           onChangeText={setQuery}
@@ -570,6 +395,25 @@ export default function HomeScreen() {
           clearButtonMode="while-editing"
         />
       </View>
+
+      {searching && parsed && parsed.chips.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipRow}
+        >
+          {parsed.chips.map((chip, i) => (
+            <View
+              key={`${chip}-${i}`}
+              style={[styles.chip, { borderColor: theme.separator }]}
+            >
+              <Text style={[styles.chipText, { color: theme.secondaryText }]}>
+                {chip}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
 
       <FlatList
         data={visibleMoments}
@@ -703,16 +547,6 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
   },
-  calendarButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   headerButton: {
     width: 44,
     height: 44,
@@ -729,6 +563,21 @@ const styles = StyleSheet.create({
   search: {
     fontSize: 16,
     letterSpacing: 0.2,
+  },
+  chipRow: {
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  chipText: {
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   list: {
     paddingHorizontal: 20,

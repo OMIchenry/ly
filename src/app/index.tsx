@@ -33,6 +33,8 @@ import { confirmDeleteMoment } from '../deleteMoment';
 import { displayTitle } from '../titles';
 import { loadTrash } from '../storage';
 import { useLock } from '../components/LockGate';
+import { checkMomentMilestones } from '../milestones';
+import type { Celebration } from '../milestones';
 import type { Theme } from '../theme';
 import type { Moment } from '../types';
 
@@ -147,6 +149,33 @@ const mapGlyphStyles = StyleSheet.create({
     width: 1.7,
     height: 7,
     marginTop: -1,
+  },
+});
+
+// Minimal bar-chart glyph for the statistics screen.
+function StatsGlyph({ color }: { color: string }) {
+  return (
+    <View style={statsGlyphStyles.row}>
+      {[9, 16, 12].map((h, i) => (
+        <View
+          key={i}
+          style={[statsGlyphStyles.bar, { backgroundColor: color, height: h }]}
+        />
+      ))}
+    </View>
+  );
+}
+
+const statsGlyphStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3.5,
+    height: 24,
+  },
+  bar: {
+    width: 4.5,
+    borderRadius: 2.25,
   },
 });
 
@@ -274,6 +303,13 @@ function OnThisDay({
   );
 }
 
+function timeOfDayGreeting(): string {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 18) return 'Good afternoon';
+  return 'Good evening';
+}
+
 function EmptyState({ theme, searching }: { theme: Theme; searching: boolean }) {
   return (
     <View style={styles.empty}>
@@ -286,11 +322,11 @@ function EmptyState({ theme, searching }: { theme: Theme; searching: boolean }) 
           { color: theme.text, fontFamily: theme.serif },
         ]}
       >
-        {searching ? 'Nothing found' : 'No moments yet'}
+        {searching ? 'Nothing found' : `${timeOfDayGreeting()}, Henry`}
       </Text>
       {!searching ? (
         <Text style={[styles.emptySubtitle, { color: theme.secondaryText }]}>
-          Tap + to keep a small moment{'\n'}before it fades.
+          What is one thing worth keeping today?{'\n'}Tap + before it fades.
         </Text>
       ) : null}
     </View>
@@ -303,6 +339,9 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('');
   const [egg, setEgg] = useState<EggResult | null>(null);
   const [milestone, setMilestone] = useState<number | null>(null);
+  const [momentCelebration, setMomentCelebration] = useState<Celebration | null>(
+    null,
+  );
   const [trashCount, setTrashCount] = useState(0);
   const { lockEnabled, toggleLock } = useLock();
 
@@ -320,6 +359,20 @@ export default function HomeScreen() {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
         // Garnish, not load-bearing.
+      }
+    } else {
+      // Moment milestones (first memory, 100 moments, anniversaries) —
+      // only one celebration at a time, streak takes precedence.
+      const mc = await checkMomentMilestones(loaded);
+      if (mc) {
+        setMomentCelebration(mc);
+        try {
+          await Haptics.notificationAsync(
+            Haptics.NotificationFeedbackType.Success,
+          );
+        } catch {
+          // Garnish, not load-bearing.
+        }
       }
     }
 
@@ -356,6 +409,7 @@ export default function HomeScreen() {
 
   function openMoreMenu() {
     const options = [
+      'Surprise me',
       'Photos',
       trashCount > 0 ? `Recently Deleted (${trashCount})` : 'Recently Deleted',
       lockEnabled ? 'Face ID Lock: On' : 'Face ID Lock: Off',
@@ -367,9 +421,20 @@ export default function HomeScreen() {
         cancelButtonIndex: options.length - 1,
       },
       async (index) => {
-        if (index === 0) router.push('/photos');
-        else if (index === 1) router.push('/trash');
-        else if (index === 2) {
+        if (index === 0) {
+          // Random memory — "surprise me".
+          if (moments.length > 0) {
+            try {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            } catch {
+              // Garnish, not load-bearing.
+            }
+            const pick = moments[Math.floor(Math.random() * moments.length)];
+            router.push(`/moment/${pick.id}`);
+          }
+        } else if (index === 1) router.push('/photos');
+        else if (index === 2) router.push('/trash');
+        else if (index === 3) {
           try {
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           } catch {
@@ -417,6 +482,14 @@ export default function HomeScreen() {
               accessibilityLabel="Open map"
             >
               <MapGlyph color={theme.text} />
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/stats')}
+              hitSlop={12}
+              style={styles.headerButton}
+              accessibilityLabel="Open statistics"
+            >
+              <StatsGlyph color={theme.text} />
             </Pressable>
             <Pressable
               onPress={() => router.push('/calendar')}
@@ -493,15 +566,20 @@ export default function HomeScreen() {
       </Pressable>
 
       <Modal
-        visible={milestone !== null}
+        visible={milestone !== null || momentCelebration !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setMilestone(null)}
+        onRequestClose={() => {
+          setMilestone(null);
+          setMomentCelebration(null);
+        }}
       >
         <View style={styles.milestoneBackdrop}>
           <View style={[styles.milestoneCard, { backgroundColor: theme.card }]}>
             <Egg
-              stage={eggStage(milestone ?? 0)}
+              stage={
+                milestone !== null ? eggStage(milestone) : (egg?.stage ?? 0)
+              }
               color={theme.text}
               soft={theme.card}
               size={96}
@@ -512,13 +590,20 @@ export default function HomeScreen() {
                 { color: theme.text, fontFamily: theme.serif },
               ]}
             >
-              {milestone}-day streak!
+              {milestone !== null
+                ? `${milestone}-day streak!`
+                : (momentCelebration?.title ?? '')}
             </Text>
             <Text style={[styles.milestoneSub, { color: theme.secondaryText }]}>
-              Your egg evolved — and you earned a freeze.
+              {milestone !== null
+                ? 'Your egg evolved — and you earned a freeze.'
+                : (momentCelebration?.sub ?? '')}
             </Text>
             <Pressable
-              onPress={() => setMilestone(null)}
+              onPress={() => {
+                setMilestone(null);
+                setMomentCelebration(null);
+              }}
               style={[styles.milestoneButton, { backgroundColor: theme.text }]}
             >
               <Text style={[styles.milestoneButtonText, { color: theme.onText }]}>
